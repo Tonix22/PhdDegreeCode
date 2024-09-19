@@ -11,10 +11,6 @@ function s_est  = QRM_Det4b(yp,R,conste,index)
   sest2 = zeros(1,QRM);
   sest3 = complex(zeros(nt,1));
   sestm = complex(zeros(nt,QRM));
- 
-
-  
-  
   %%
   nodos=0;
 % se realiza la detecci?n del nivel nt  

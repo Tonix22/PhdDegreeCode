@@ -1,26 +1,17 @@
-function [s_est,nodos] = OSIC_Det(rm,mag2,conste,index)
-
-  nodos=0;  
-  [rows cols]=size(mag2);
-  dim = length(conste);
-
-%% declaracion
-  s_est = zeros(rows,1)+1i*zeros(rows,1);
-  sest = zeros(rows,1)+1i*zeros(rows,1);
-  sest2 = zeros(1,dim);
-%%
+function x_est = OSIC_Det(H, y)
+  % Step 1: QR decomposition of H
+  [Q, R] = qr(H);
   
-% se hace la estimaci?n de los s?mbolos   usando el esquema OSIC
-  nodos=nodos+1;
-  for k = 1:cols
-    ind = cols - (k - 1);
-    a_est = rm(ind,1)/mag2(ind,ind);
-    sest2 = (abs(a_est - conste).^2);
-    [dist pos] = sort(sest2);
-    sest(ind,1) = conste(pos(1));
-    rm = rm - sest(ind,1)*mag2(:,ind);
+  % Step 2: Transform the received vector using the conjugate transpose of Q
+  v_tilde = Q' * y;
+  
+  % Step 3: Initialize the estimated signal vector
+  N = size(H, 2);
+  x_est = zeros(N, 1);  % Initialize as a column vector
+  
+  % Step 4: Backward substitution for interference cancellation
+  for i = N:-1:1
+      sum_Rx = R(i, i+1:N) * x_est(i+1:N);
+      x_est(i) = (v_tilde(i) - sum_Rx) / R(i, i);
   end
-  
-   for k=1:cols
-         s_est(index(k),1) = sest(k);
-   end 
+end
