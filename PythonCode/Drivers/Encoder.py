@@ -39,7 +39,7 @@ class EncodeDataIntoBits():
 
         # Ensure the output is a regular integer array (not numpy arrays)
         frames = frames.astype(np.uint8)  # Convert to uint8 for clarity
-        return frames.T  # Transpose to get (48, X) shape
+        return frames  # Transpose to get (48, X) shape
 
     def save_frames_to_npy(self,filename="frames.npy"):
         """Save the frames array to an npy file."""
@@ -51,7 +51,7 @@ class EncodeDataIntoBits():
         bits = self.bytes_to_bits(self.byte_array)
         
         # Step 2: Slice the bits into the desired slice size
-        slices = self.slice_bits(bits, self.slice_size)
+        slices = self.slice_bits(bits, self.slice)
         
         # Step 3: Group the slices into frames of size 48
         self.frames = self.group_slices_to_frames(slices)
