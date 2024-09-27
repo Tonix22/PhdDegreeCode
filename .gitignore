@@ -1,2 +1,4 @@
 *.mat
 *.npy
+PythonCode/Drivers/__pycache__/*
+PythonCode/UnitTests/__pycache__/*

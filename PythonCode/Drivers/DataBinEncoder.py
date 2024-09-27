@@ -1,9 +1,11 @@
 import numpy as np
 
 class EncodeDataIntoBits():
-    def __init__(self, byte_array, slice):
+    def __init__(self, byte_array, slice, frame_size, filePath):
         self.byte_array = byte_array
         self.slice = slice
+        self.frame_size = frame_size
+        self.filePath = filePath
 
     def bytes_to_bits(self, byte_array):
         """Convert a numpy array of uint8 bytes to a numpy array of bits (0 or 1)."""
@@ -22,7 +24,7 @@ class EncodeDataIntoBits():
         return bits
 
 
-    def group_slices_to_frames(self, slices, frame_size=48):
+    def group_slices_to_frames(self, slices, frame_size = 48):
         """Concatenate slices into frames of size 'frame_size'. Pad if necessary."""
         # Flatten the slices into a continuous sequence of bits
         concatenated_slices = slices.flatten()
@@ -41,26 +43,21 @@ class EncodeDataIntoBits():
         frames = frames.astype(np.uint8)  # Convert to uint8 for clarity
         return frames  # Transpose to get (48, X) shape
 
-    def save_frames_to_npy(self,filename="frames.npy"):
+    def save_frames_to_npy(self,filename="/frames.npy"):
         """Save the frames array to an npy file."""
-        np.save(filename, self.frames)
+        np.save(self.filePath + filename, self.frames)
         print(f"Frames saved to {filename}")
 
     def process_byte_array(self):
+        """Transform byte array into slices and then stack them
+        into groups of frame size.
+        """
         # Step 1: Convert byte array (uint8) to bit array
         bits = self.bytes_to_bits(self.byte_array)
         
         # Step 2: Slice the bits into the desired slice size
         slices = self.slice_bits(bits, self.slice)
         
-        # Step 3: Group the slices into frames of size 48
-        self.frames = self.group_slices_to_frames(slices)
-        # Step 4: Save the frames to a .npy file
+        # Step 3: Group the slices into frames of N size
+        self.frames = self.group_slices_to_frames(slices, self.frame_size)
 
-
-# Example usage
-byte_array = np.array([0xA2, 0x3A,0xFE,0X30,0xA2, 0xAA,0xF0,0XF0], dtype=np.uint8)  # Example byte array
-databitEncode = EncodeDataIntoBits(byte_array,2)
-databitEncode.process_byte_array()
-databitEncode.save_frames_to_npy()
-# to get the each column is with frames[:, col_idx] 
