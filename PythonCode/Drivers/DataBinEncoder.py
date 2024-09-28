@@ -1,7 +1,7 @@
 import numpy as np
 
 class EncodeDataIntoBits():
-    def __init__(self, byte_array, slice, frame_size, filePath):
+    def __init__(self, byte_array, slice, frame_size, filePath=""):
         self.byte_array = byte_array
         self.slice = slice
         self.frame_size = frame_size

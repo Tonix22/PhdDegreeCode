@@ -7,6 +7,20 @@ class PictureDecoder:
         # Initialize with the encoded byte sequence
         self.encoded_data = encoded_data.tobytes()
 
+    def hint_decode(self, height, width, channels):
+        image_byte_length = height * width * channels
+        image_data = self.encoded_data[12:12 + image_byte_length]
+        image_array = np.frombuffer(image_data, dtype=np.uint8).reshape((height, width, channels))
+        # Return the reconstructed image
+        if channels == 1:
+            return Image.fromarray(image_array.squeeze(), mode='L')  # Grayscale
+        elif channels == 3:
+            return Image.fromarray(image_array, mode='RGB')  # RGB
+        elif channels == 4:
+            return Image.fromarray(image_array, mode='RGBA')  # RGBA
+        else:
+            raise ValueError(f"Unsupported number of channels: {channels}")
+
     def decode(self):
         try:
             # Extract the header (first 12 bytes for height, width, channels)

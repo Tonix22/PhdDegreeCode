@@ -4,11 +4,11 @@ import unittest
 import numpy as np
 from pathlib import Path
 
-# Agrega el directorio del proyecto a sys.path
+# Add sys.path
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Drivers'))
 sys.path.insert(0, parent_dir)
 
-# Importa Encoder desde Driver
+# Import Encoder and Driver
 from DataBinEncoder import EncodeDataIntoBits # type: ignore
 from DataBinDecoder import DecodeFramesToBits # type: ignore
 

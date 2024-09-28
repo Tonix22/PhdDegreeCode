@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 
-# Agrega el directorio del proyecto a sys.path
+# Add sys.path
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Drivers'))
 sys.path.insert(0, parent_dir)
 
