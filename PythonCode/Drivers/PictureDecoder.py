@@ -5,7 +5,7 @@ import zlib  # For CRC32 checksum
 class PictureDecoder:
     def __init__(self, encoded_data):
         # Initialize with the encoded byte sequence
-        self.encoded_data = encoded_data
+        self.encoded_data = encoded_data.tobytes()
 
     def decode(self):
         try:

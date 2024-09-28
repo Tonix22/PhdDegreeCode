@@ -12,7 +12,7 @@ sys.path.insert(0, parent_dir)
 from DataBinEncoder import EncodeDataIntoBits # type: ignore
 from DataBinDecoder import DecodeFramesToBits # type: ignore
 
-class TestEncoder(unittest.TestCase):
+class BinaryCodingTest(unittest.TestCase):
     
     def setUp(self):
         self.byte_array = np.array([0xA2, 0x3A,0xFE,0X30,0xA2, 0xAA,0xF0,0XF0], dtype=np.uint8)  # Example byte array

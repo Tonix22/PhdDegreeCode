@@ -24,7 +24,8 @@ class PictureEncoder:
         footer = b'END'  # A 3-byte footer
         
         # Return the combined header, byte sequence, checksum, and footer
-        return header + byte_sequence + checksum + footer
+        bytedata = header + byte_sequence + checksum + footer
+        return np.frombuffer(bytedata, dtype=np.uint8)
     
     def encode_in_chunks(self, chunk_size=1024):
         # Convert shape info to a flat array (4 bytes for each dimension)
@@ -49,6 +50,7 @@ class PictureEncoder:
         end_chunk = np.array([-1, 0], dtype=np.int32).tobytes() + b'' + b'END'
         encoded_chunks.append(end_chunk)
         
+        bytedata = header + b''.join(encoded_chunks)
         # Return the header followed by all the chunks
-        return header + b''.join(encoded_chunks)
+        return np.frombuffer(bytedata, dtype=np.uint8)
 
