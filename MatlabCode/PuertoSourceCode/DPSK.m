@@ -8,7 +8,7 @@ FFTSize = 48;            % FFT size for OFDM
 k = log2(M);             % Bits per symbol (log base 2 of modulation order)
 numSC = 48;              % Number of subcarriers
 numBitSymbol = numSC * k; % Total number of bits per OFDM symbol
-H  = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
 
 ber = zeros(1, length(SNR_dB)); % Preallocate BER results
 
@@ -19,69 +19,42 @@ for i = 1:length(SNR_dB)
 
     % Loop until we have enough bit errors for accurate BER calculation
     while numError < 1000
-        
-        % Generate transmitted signal
-        signalTx = generateRandomData(M, numSC);
-        
-        % Modulate data with PSK
-        pskSignal = applyPSKModulation(signalTx, M);
-
-        % Differential encoding for DPSK
-        DPSKsignalTx = applyDPSKEncoding(pskSignal);
-
-        G = processChannel(H);
-        RxSignal = G*DPSKsignalTx;
-
-        % OFDM modulation
-        OFDMsignalTx = ofdmModulate(RxSignal, FFTSize);
-
-        % Pass through AWGN channel using SNR (no conversion needed)
-        SNR = SNR_dB(i); % Use SNR in dB directly
-        signalRx = awgn(OFDMsignalTx, SNR); % Add noise
-        
-        % OFDM demodulation
-        OFDMsignalRx = ofdmDemodulate(signalRx, FFTSize);
-
-        % Differential decoding for DPSK
-        DPSKsignalRx = applyDPSKDecoding(OFDMsignalRx, numSC);
-
-        % Demodulate data with PSK
-        signalEstimate = applyPSKDemodulation(DPSKsignalRx, M);
+        % Transmit and receive the signal through the channel
+        [signalTx, signalEstimate] = processChannelAndTransmit(H, M, FFTSize, SNR_dB(i), numSC);
         
         % Calculate bit errors
         numErrorCalculate = biterr(signalTx, signalEstimate);  
         numError = numError + numErrorCalculate;  
         numBits = numBits + numBitSymbol;  
-
     end
     
-    % Calculate BER for current SNR value
+    % Calculate BER for the current SNR value
     ber(i) = numError / numBits;
-
 end
 
 %% Plot Results
-plotBER(SNR_dB, ber, M,numBitSymbol,'DPSK_SNR');
-saveBERToCSV(SNR_dB, ber, 'DPSK_SNR.csv')
+berTheoretical = calculateTheoreticalBER(SNR_dB, M, numBitSymbol); % Optional calculation of theoretical BER
+plotBER(SNR_dB, ber, M, numBitSymbol, 'DPSK_SNR', berTheoretical);
+saveBERToCSV(SNR_dB, ber, 'DPSK_SNR.csv');
 
 %% Functions
 
-% Generates random data symbols
+% Generate random data symbols
 function signalTx = generateRandomData(M, numSC)
     signalTx = randi([0 M-1], numSC, 1);
 end
 
-% Applies PSK modulation
+% Modulate data with PSK
 function pskSignal = applyPSKModulation(signalTx, M)
     pskSignal = pskmod(signalTx, M, pi/2);
 end
 
-% Applies PSK demodulation
+% Demodulate data with PSK
 function signalEstimate = applyPSKDemodulation(DPSKsignalRx, M)
     signalEstimate = pskdemod(DPSKsignalRx, M, pi/2);
 end
 
-% Differentially encodes signal for DPSK
+% Differentially encode signal for DPSK
 function DPSKsignalTx = applyDPSKEncoding(pskSignal)
     DPSKsignalTx = pskSignal;
     for n = 2:length(DPSKsignalTx)
@@ -89,7 +62,7 @@ function DPSKsignalTx = applyDPSKEncoding(pskSignal)
     end
 end
 
-% Differentially decodes DPSK signal
+% Differentially decode DPSK signal
 function DPSKsignalRx = applyDPSKDecoding(OFDMsignalRx, numSC)
     DPSKsignalRx = complex(zeros(numSC, 1));
     DPSKsignalRx(1) = OFDMsignalRx(1); % First symbol remains unchanged
@@ -106,18 +79,74 @@ function OFDMsignalRx = ofdmDemodulate(signalRx, FFTSize)
     OFDMsignalRx = fft(signalRx, FFTSize);
 end
 
-% Plots the BER graph and saves the figure as a file
-function plotBER(SNR_dB, ber, M, numBitSymbol, plotName)
-    % Convert SNR to Eb/No using numBitSymbol
-    EbNo_dB = convertSNRtoEbNo(SNR_dB, numBitSymbol);
-        
-    % Calculate the theoretical BER using Eb/No
-    berTheoretical = berawgn(EbNo_dB, 'dpsk', M, 'nondiff'); % Theoretical BER
+% Encapsulates the process of transmitting and receiving the signal
+function [signalTx, signalEstimate] = processChannelAndTransmit(H, M, FFTSize, SNR_dB, numSC)
+    % Generate random data symbols
+    signalTx = generateRandomData(M, numSC);
     
+    % Modulate data with PSK
+    pskSignal = applyPSKModulation(signalTx, M);
+
+    % Differential encoding for DPSK
+    DPSKsignalTx = applyDPSKEncoding(pskSignal);
+
+    % Process channel
+    G = processChannel(H);
+    RxSignal = G * DPSKsignalTx;
+
+    % OFDM modulation
+    OFDMsignalTx = ofdmModulate(RxSignal, FFTSize);
+
+    % Pass through AWGN channel using SNR
+    signalRx = awgn(OFDMsignalTx, SNR_dB);
+
+    % OFDM demodulation
+    OFDMsignalRx = ofdmDemodulate(signalRx, FFTSize);
+
+    % Differential decoding for DPSK
+    DPSKsignalRx = applyDPSKDecoding(OFDMsignalRx, numSC);
+
+    % PSK demodulation
+    signalEstimate = applyPSKDemodulation(DPSKsignalRx, M);
+end
+
+% Process the channel and maintain an internal counter
+function G = processChannel(H)
+    persistent channelCont;
+    if isempty(channelCont)
+        channelCont = 1; % Start with the first channel
+    end
+    
+    % Process the current channel
+    G = H(:,:,channelCont);
+    
+    % Update the channel counter
+    channelCont = channelCont + 1;
+    
+    % Reset the counter if it reaches 10000
+    if channelCont == 10000
+        channelCont = 1;
+    end
+end
+
+% Calculate theoretical BER
+function berTheoretical = calculateTheoreticalBER(SNR_dB, M, numBitSymbol)
+    EbNo_dB = convertSNRtoEbNo(SNR_dB, numBitSymbol); % Convert SNR to Eb/No
+    berTheoretical = berawgn(EbNo_dB, 'dpsk', M, 'nondiff'); % Theoretical BER
+end
+
+% Plots the BER graph and saves the figure as a file
+function plotBER(SNR_dB, ber, M, numBitSymbol, plotName, berTheoretical)
     % Create the plot
     figure;
-    semilogy(SNR_dB, berTheoretical, 'k-', 'LineWidth', 1.5); % Theoretical BER
-    hold on;
+    
+    % Plot theoretical BER if provided
+    if nargin >= 6 && ~isempty(berTheoretical)
+        semilogy(SNR_dB, berTheoretical, 'k-', 'LineWidth', 1.5); % Theoretical BER
+        hold on;
+    end
+    
+    % Plot estimated BER
     semilogy(SNR_dB, ber, 'b--', 'LineWidth', 1.5); % Estimated BER
     xlabel('SNR (dB)');
     ylabel('BER');
@@ -151,39 +180,10 @@ function saveBERToCSV(SNR_dB, ber, csvFileName)
     fprintf('Data saved to %s\n', csvFileName);
 end
 
+% Convert SNR to Eb/No
 function EbNo_dB = convertSNRtoEbNo(SNR_dB, numBitSymbol)
     % Convert SNR (in dB) to Eb/No (in dB)
-    % Inputs:
-    % SNR_dB - Signal-to-Noise Ratio in dB (vector)
-    % numBitSymbol - Number of bits per symbol (scalar)
-    
-    % Convert SNR from dB to linear scale
-    SNR_linear = 10.^(SNR_dB / 10);
-    
-    % Calculate Eb/No in linear scale
-    EbNo_linear = SNR_linear / numBitSymbol;
-    
-    % Convert Eb/No to dB
-    EbNo_dB = 10 * log10(EbNo_linear);
-end
-
-
-% Processes a channel and maintains an internal channel counter
-function G = processChannel(H)
-    persistent channelCont;
-    
-    if isempty(channelCont)
-        channelCont = 1; % Start with the first channel
-    end
-    
-    % Process the current channel
-    G = H(:,:,channelCont);
-    
-    % Update the channel counter
-    channelCont = channelCont + 1;
-    
-    % Reset the counter if it reaches 10000
-    if channelCont == 10000
-        channelCont = 1;
-    end
+    SNR_linear = 10.^(SNR_dB / 10);    % Convert SNR from dB to linear scale
+    EbNo_linear = SNR_linear / numBitSymbol; % Calculate Eb/No in linear scale
+    EbNo_dB = 10 * log10(EbNo_linear); % Convert Eb/No to dB
 end
