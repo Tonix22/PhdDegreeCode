@@ -2,7 +2,7 @@ close all;
 clc;
 
 %% Parameter System
-EbNo = (0:2:10);         % Range of Eb/No values
+SNR_dB = 5:5:30;         % Range of SNR values in dB
 M = 4;                   % Modulation order (QPSK)
 FFTSize = 48;            % FFT size for OFDM
 k = log2(M);             % Bits per symbol (log base 2 of modulation order)
@@ -10,10 +10,10 @@ numSC = 48;              % Number of subcarriers
 numBitSymbol = numSC * k; % Total number of bits per OFDM symbol
 H  = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
 
-ber = zeros(1, length(EbNo)); % Preallocate BER results
+ber = zeros(1, length(SNR_dB)); % Preallocate BER results
 
-%% Main Loop for each Eb/No
-for i = 1:length(EbNo)
+%% Main Loop for each SNR
+for i = 1:length(SNR_dB)
     numError = 0;  % Counter for bit errors
     numBits = 0;   % Counter for total bits
 
@@ -29,11 +29,14 @@ for i = 1:length(EbNo)
         % Differential encoding for DPSK
         DPSKsignalTx = applyDPSKEncoding(pskSignal);
 
-        % OFDM modulation
-        OFDMsignalTx = ofdmModulate(DPSKsignalTx, FFTSize);
+        G = processChannel(H);
+        RxSignal = G*DPSKsignalTx;
 
-        % Pass through AWGN channel
-        SNR = convertSNR(EbNo(i), 'ebno', 'BitsPerSymbol', numBitSymbol); 
+        % OFDM modulation
+        OFDMsignalTx = ofdmModulate(RxSignal, FFTSize);
+
+        % Pass through AWGN channel using SNR (no conversion needed)
+        SNR = SNR_dB(i); % Use SNR in dB directly
         signalRx = awgn(OFDMsignalTx, SNR); % Add noise
         
         % OFDM demodulation
@@ -52,14 +55,14 @@ for i = 1:length(EbNo)
 
     end
     
-    % Calculate BER for current Eb/No value
+    % Calculate BER for current SNR value
     ber(i) = numError / numBits;
 
 end
 
 %% Plot Results
-plotBER(EbNo, ber, M,'DPSK');
-saveBERToCSV(EbNo, ber, 'DPSk.csv')
+plotBER(SNR_dB, ber, M,numBitSymbol,'DPSK_SNR');
+saveBERToCSV(SNR_dB, ber, 'DPSK_SNR.csv')
 
 %% Functions
 
@@ -104,23 +107,26 @@ function OFDMsignalRx = ofdmDemodulate(signalRx, FFTSize)
 end
 
 % Plots the BER graph and saves the figure as a file
-function plotBER(EbNo, ber, M, plotName)
-    % Plot the theoretical BER
-    berTheoretical = berawgn(EbNo, 'dpsk', M, 'nondiff'); % Theoretical BER
+function plotBER(SNR_dB, ber, M, numBitSymbol, plotName)
+    % Convert SNR to Eb/No using numBitSymbol
+    EbNo_dB = convertSNRtoEbNo(SNR_dB, numBitSymbol);
+        
+    % Calculate the theoretical BER using Eb/No
+    berTheoretical = berawgn(EbNo_dB, 'dpsk', M, 'nondiff'); % Theoretical BER
     
     % Create the plot
     figure;
-    semilogy(EbNo, berTheoretical, 'k-', 'LineWidth', 1.5); % Theoretical BER
+    semilogy(SNR_dB, berTheoretical, 'k-', 'LineWidth', 1.5); % Theoretical BER
     hold on;
-    semilogy(EbNo, ber, 'b--', 'LineWidth', 1.5); % Estimated BER
-    xlabel('Eb/No (dB)');
+    semilogy(SNR_dB, ber, 'b--', 'LineWidth', 1.5); % Estimated BER
+    xlabel('SNR (dB)');
     ylabel('BER');
     legend('Theoretical BER', 'Estimated BER');
     grid on;
     
     % Save the plot as a file in the current directory
     if nargin < 4
-        plotName = 'BER_plot'; % Default name if not provided
+        plotName = 'BER_plot_SNR'; % Default name if not provided
     end
     saveas(gcf, [plotName, '.png']); % Save as PNG file
 
@@ -129,13 +135,13 @@ function plotBER(EbNo, ber, M, plotName)
 end
 
 % Save the BER data to a CSV file
-function saveBERToCSV(EbNo, ber, csvFileName)
-    % Combine EbNo and BER data into a single matrix
-    dataToSave = [EbNo(:), ber(:)];
+function saveBERToCSV(SNR_dB, ber, csvFileName)
+    % Combine SNR and BER data into a single matrix
+    dataToSave = [SNR_dB(:), ber(:)];
     
     % If no file name is provided, use a default name
     if nargin < 3
-        csvFileName = 'ber_data.csv';
+        csvFileName = 'ber_data_SNR.csv';
     end
     
     % Save the data to a CSV file
@@ -145,13 +151,27 @@ function saveBERToCSV(EbNo, ber, csvFileName)
     fprintf('Data saved to %s\n', csvFileName);
 end
 
-function G = processChannel(H)
-    % A function that processes a channel from H and maintains an internal channel counter
+function EbNo_dB = convertSNRtoEbNo(SNR_dB, numBitSymbol)
+    % Convert SNR (in dB) to Eb/No (in dB)
+    % Inputs:
+    % SNR_dB - Signal-to-Noise Ratio in dB (vector)
+    % numBitSymbol - Number of bits per symbol (scalar)
     
-    % Declare the persistent variable channelCont
+    % Convert SNR from dB to linear scale
+    SNR_linear = 10.^(SNR_dB / 10);
+    
+    % Calculate Eb/No in linear scale
+    EbNo_linear = SNR_linear / numBitSymbol;
+    
+    % Convert Eb/No to dB
+    EbNo_dB = 10 * log10(EbNo_linear);
+end
+
+
+% Processes a channel and maintains an internal channel counter
+function G = processChannel(H)
     persistent channelCont;
     
-    % Initialize channelCont the first time the function is called
     if isempty(channelCont)
         channelCont = 1; % Start with the first channel
     end
