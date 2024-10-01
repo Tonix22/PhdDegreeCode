@@ -6,6 +6,7 @@ from pathlib import Path
 from commpy.utilities import hamming_dist
 from PIL import Image
 import math
+from tqdm import tqdm
 
 # Add sys.path
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Drivers'))
@@ -25,7 +26,7 @@ class ChannelTesting(unittest.TestCase):
     
     def setUp(self):
         # Setup method to create a sample image or use an existing one
-        self.image_path = '/home/tonix/Documents/PhdDegreeCode/PythonCode/UnitTests/dog-face.jpg'
+        self.image_path = '/home/tonix/Documents/PhdDegreeCode/PythonCode/UnitTests/dory.jpg'
         self.image = Image.open(self.image_path)
         self.width, self.height = self.image.size
         self.channels = len(self.image.getbands())  # Specify desired channels (1, 3, or 4)
@@ -44,25 +45,30 @@ class ChannelTesting(unittest.TestCase):
         databitEncode.process_byte_array()
         
         coder = ConstelationCoder(Modulation.QAM, self.constelation_size)
-        channel = Channel(5)
+        channel = Channel(30)
         rx_frames = np.empty_like(databitEncode.frames)
         
-        for i in range(databitEncode.frames.shape[0]):
+        biterrors = 0
+        totalbits = 0
+        for i in tqdm(range(databitEncode.frames.shape[0]), desc="Processing Frames"):
             tx_bits = databitEncode.frames[i, :]  # Access the i-th row
             tx = coder.Encode(tx_bits)
             rx = channel.response(tx)
             rx_bits = coder.Decode(rx)
             #save rx frame
             rx_frames[i, :] = rx_bits
-            #ber = np.sum(tx_bits != rx_bits)/len(rx_bits)
-            #print(ber)
+            biterrors += np.bitwise_xor(tx_bits, rx_bits).sum()
+            totalbits +=len(rx_bits)
+        
+        ber = biterrors / totalbits
+        print("BER: "+ str(ber))
         
         databitDecode = DecodeFramesToBits(rx_frames,self.frame_size)
         decoded_output = databitDecode.flatten_frames_in_bytes()
         #Decode picture
         decoder = PictureDecoder(decoded_output)  # Initialize with encoded byte sequence and dimensions
         recovered_image = decoder.hint_decode(self.height, self.width, self.channels)  # Decode the image back to its original form
-        recovered_image.save(os.getcwd()+'/th-ChannelRebuild.jpg')
+        recovered_image.save(os.getcwd()+'/dory-ChannelRebuild.jpg')
         self.image.close()
         
     
