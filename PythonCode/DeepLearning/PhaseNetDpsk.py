@@ -27,27 +27,32 @@ CONSTELLATION_SIZE = 4  # For example, 16-QAM
 IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Retsuko.jpeg'  # Replace with your image path
 
 # Define the PhaseEqualizer network
-class PhaseEqualizer(nn.Module):
-    def __init__(self, input_size, hidden_size):
-        super(PhaseEqualizer, self).__init__()
-        self.angle_net = nn.Sequential(
-            nn.Linear(input_size, hidden_size),
-            nn.LayerNorm(hidden_size),
-            nn.LeakyReLU(),  # Changed to ReLU
-            
-            nn.Linear(hidden_size, hidden_size * hidden_size),
-            nn.LayerNorm(hidden_size * hidden_size),
-            nn.LeakyReLU(),
-            
-            nn.Linear(hidden_size * hidden_size, hidden_size),
-            nn.LayerNorm(hidden_size),
-            nn.LeakyReLU(),
-            
-            nn.Linear(hidden_size, input_size),
-        )
-    
+class ResidualBlock(nn.Module):
+    def __init__(self, size):
+        super(ResidualBlock, self).__init__()
+        self.linear = nn.Linear(size, size)
+        self.activation = nn.LeakyReLU()
+        self.Norm = nn.LayerNorm(size)
+
     def forward(self, x):
-        return self.angle_net(x)
+        residual = x
+        out = self.linear(x)
+        out = self.Norm(out)
+        out = self.activation(out)
+        out += residual
+        return out
+
+class PhaseEqualizer(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers=5):
+        super(PhaseEqualizer, self).__init__()
+        layers = [nn.Linear(input_size, hidden_size), nn.LeakyReLU()]
+        for _ in range(num_layers):
+            layers.append(ResidualBlock(hidden_size))
+        layers.append(nn.Linear(hidden_size, input_size))
+        self.angle_net = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return x-self.angle_net(x)
 
 class PhaseNet(pl.LightningModule):
     def __init__(self, input_size, hidden_size, learning_rate, image_path, constellation_size, style='Traditional', channel_snr=30, los=True):
