@@ -1,0 +1,34 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+
+\title{Sample LaTeX Document with Bibliography}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+
+
+\maketitle
+
+\section{Justification}
+
+The capability of telemetry to transmit real-time data efficiently in critical systems is significantly challenged within the evolving landscape of Industry 4.0 \cite{5GReady}. 
+Telemetry, which serves as the backbone for transmitting crucial information in many industrial and vehicular applications, faces severe limitations when applied to dynamic environments. 
+These challenges are particularly evident in mobility-based systems such as Vehicle-to-Vehicle (V2V) communication \cite{V2V}, where devices are often traveling at high speeds.
+
+In such scenarios, the need for reliable, high-speed data transmission becomes important. 
+V2V systems, typically may necessitate data rates ranging from 2 to 54 Mbps at a distance of 15 to 1000m, with a maximal vehicular speed of 200 km/h \cite{DopplereffectV2V}.
+
+Autonomous vehicles depend heavily on uninterrupted, 
+real-time data exchange to make split-second decisions, and any delays or inaccuracies in data transmission could result in dangerous situations \cite{AutonomousRemoteSensing}
+and could result in the complete loss of equipment or even pose a danger to personnel
+
+Doppler effect and latency will cause distortions in the communication system and demand retransmission or reading of corrupted data \cite{FastFading}.
+These elements taken together provide a significant obstacle to reachable: quick fading channels, fast mobility, and high-speed data demand.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+
+\end{document}
