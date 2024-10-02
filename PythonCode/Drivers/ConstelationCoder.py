@@ -22,6 +22,8 @@ class ConstelationCoder:
         
         if modulation == Modulation.QAM:
             self.modem = QAMModem(constelationSize)  # Initialize QAM modem with the given constellation size.
+            
+        self.average_power = None
 
     def Encode(self, tx):
         """
@@ -52,7 +54,8 @@ class ConstelationCoder:
             array-like: The demodulated binary data.
         """
         # Scale the received symbols back to the original power level.
-        rx = rx * self.average_power
+        if self.average_power != None:
+            rx = rx * self.average_power
         
         # Demodulate the received symbols to recover the transmitted data.
         self.signal_symbols = self.modem.demodulate(rx,'hard')

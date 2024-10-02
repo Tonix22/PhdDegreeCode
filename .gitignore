@@ -4,3 +4,8 @@ PythonCode/Drivers/__pycache__/*
 PythonCode/UnitTests/__pycache__/*
 PythonCode/DeepLearning/tb_logs/*
 tb_logs/PhaseNet/version_*
+*.pyc
+Documents/Thesis/ProblemJustification.aux
+Documents/Thesis/ProblemJustification.bbl
+Documents/Thesis/ProblemJustification.blg
+Documents/Thesis/ProblemJustification.log

@@ -5,6 +5,7 @@ import os
 import sys
 import matlab.engine
 from tqdm import tqdm
+import torch
 
 # Add sys.path for accessing the required modules
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Drivers'))
@@ -35,6 +36,9 @@ class DPSK_OFDM:
         self.constellation_coder = ConstelationCoder(Modulation.PSK, self.M)
         self.channel = Channel(channel_snr, LOS=los)  # Initialize the channel with SNR and LOS
         self.utils = OFDMUtils()  # Initialize the utils class
+        self.network = None
+        self.txbits = None
+        self.idx = 0
 
     def applyDPSKEncoding(self, psk_signal):
         DPSK_signalTx = np.copy(psk_signal)
@@ -74,10 +78,17 @@ class DPSK_OFDM:
         OFDM_signalRx = self.utils.ofdm_demodulate(signalRx)
 
         DPSK_signalRx = self.applyDPSKDecoding(OFDM_signalRx)
-    
-        # PSK demodulation
-        signalEstimate = self.constellation_coder.Decode(DPSK_signalRx)
         
+        if(self.network != None):
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            input_tensor = torch.from_numpy(DPSK_signalRx).to(device)
+            input_tensor = (torch.angle(input_tensor).float() / torch.pi)
+            output = self.network(input_tensor)
+            equalizer = torch.polar(torch.abs(input_tensor),output)
+            DPSK_signalRx = equalizer.detach().cpu().numpy()
+        
+        # PSK demodulation
+        signalEstimate = self.constellation_coder.Decode(DPSK_signalRx) 
         return signalEstimate
         
 
@@ -90,7 +101,13 @@ class DPSK_OFDM:
             tuple: Transmitted and estimated signals.
         """
         # Generate random data symbols
-        signalTx = np.random.randint(0, 2, self.numSC*2)
+        if self.txbits is None:
+            signalTx = np.random.randint(0, 2, self.numSC*2)
+        else:
+            signalTx = self.txbits[self.idx, :]
+            self.idx += 1
+            if(self.txbits.shape[0] < self.idx):
+                self.idx = 0
 
         DPSK_signalTx = self.DPSK_encoder(signalTx)
         
@@ -102,14 +119,17 @@ class DPSK_OFDM:
 
         return signalTx, signalEstimate
 
-    def run_simulation(self):
-
+    def run_simulation(self,txbits = None,network = None):
+        
+        self.network = network
+        self.txbits = txbits
+        
         for i, snr_dB in enumerate(tqdm(self.SNR_dB, desc='SNR Loop')):
             num_error = 0
             num_bits = 0
 
-            with tqdm(total=100, desc=f'SNR {snr_dB} dB', leave=False) as pbar:
-                while num_error < 100:
+            with tqdm(total=1000, desc=f'SNR {snr_dB} dB', leave=False) as pbar:
+                while num_error < 1000:
                     signalTx, signalEstimate = self.transmit_and_receive(snr_dB)
                     errors = int(np.bitwise_xor(signalTx, signalEstimate).sum())
                     num_error += errors

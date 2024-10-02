@@ -92,9 +92,9 @@ class ImageChunksDataset(Dataset):
                 - target_tensor (torch.Tensor): Original transmitted symbols (ground truth for training).
         """
         # Get the bits for the given frame
-        tx_bits = self.databit_encode.frames[idx, :]
+        self.tx_bits = self.databit_encode.frames[idx, :]
         # Modulate the bits to symbols using the constellation coder
-        target = self.coder.Encode(tx_bits)
+        target = self.coder.Encode(self.tx_bits)
 
         if self.style == 'DPSK':
             # DPSK encoding
