@@ -6,15 +6,21 @@ addpath('./Libraries/');
 %% parameter 
 % QAM modulation order
 M = 4; 
-fftSize = 48;
+frameSize = 48;
 
 k = log2(M);
 constellation = qammod(0:M-1,M,"gray");
 
 %% channel V2V
-channel = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat');
+channelLOS  = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+channelNLOS = load('../../Data/kaggle_dataset/v2v80211p_NLOS.mat').vectReal32b;
 
-H = channel.vectReal32b;
+H = zeros(48, 48, 20000);
+% Interleave the matrices along the third dimension
+H(:,:,1:2:end) = channelLOS; % Assign matrices from A to odd indices (1, 3, 5,...)
+H(:,:,2:2:end) = channelNLOS; % Assign matrices from B to even indices (2, 4, 6,...)
+clear channelLOS channelNLOS
+
 channelCont=1;
 %% system model 
 
@@ -38,7 +44,7 @@ for i = 1:length(EqCollection)
         numBits = 0;
         while numErrs < 1e3 && numBits < 1e6
             % Generate binary data and convert to symbols
-            tx = randi([0 1],fftSize*log2(M),1);
+            tx = randi([0 1],frameSize*log2(M),1);
             % QAM modulate using 'Gray' symbol mapping
             qpskSig = qammod(tx,M,"gray","InputType","bit","UnitAveragePower",true);
             
@@ -50,17 +56,17 @@ for i = 1:length(EqCollection)
             end
                   
             TxSig = qpskSig;
-            TxSig = fft(qpskSig,fftSize); 
+            TxSig = fft(qpskSig,frameSize); 
 
             RxSignal = G*TxSig;
 
-            H1 = ifft(G,fftSize);
+            H1 = ifft(G,frameSize);
             H1 = fft(H1.');
             H1 = H1.';
 
             %Multipy input by chanel in frequency domain.
             RxSignal = awgn(RxSignal,SNR(n),"measured");
-            rxSig=ifft(RxSignal,fftSize);
+            rxSig=ifft(RxSignal,frameSize);
             NoiseVar=10^(-SNR(n)/10);
             NoiseAmpl=sqrt(NoiseVar);
             nstd = sqrt( (1 /( 10^(SNR(n)/10 ) ) )/2 );
@@ -87,7 +93,7 @@ for i = 1:length(EqCollection)
             nErrors = biterr(tx,rx);
             % Increment the error and bit counters
             numErrs = numErrs + nErrors;
-            numBits = numBits + fftSize*log2(M);
+            numBits = numBits + frameSize*log2(M);
         end
         
         berEst(n) = numErrs/numBits
