@@ -82,9 +82,13 @@ class DPSK_OFDM:
         if(self.network != None):
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             input_tensor = torch.from_numpy(DPSK_signalRx).to(device)
-            input_tensor = (torch.angle(input_tensor).float() / torch.pi)
-            output = self.network(input_tensor)
-            equalizer = torch.polar(torch.abs(input_tensor),output)
+            phase_tensor = ((torch.angle(input_tensor).float() / torch.pi) + 1)/2
+        
+            norm_factor = torch.max(torch.abs(input_tensor))
+            mag_tensor = (torch.abs(input_tensor)/norm_factor).float()
+            
+            mag,phase = self.network(mag_tensor,phase_tensor)
+            equalizer = torch.polar(mag*norm_factor, ((phase*2)-1)*torch.pi)
             DPSK_signalRx = equalizer.detach().cpu().numpy()
         
         # PSK demodulation
@@ -119,7 +123,7 @@ class DPSK_OFDM:
 
         return signalTx, signalEstimate
 
-    def run_simulation(self,txbits = None,network = None):
+    def run_simulation(self,txbits = None,network = None, filename = "ber_snr_data.csv"):
         
         self.network = network
         self.txbits = txbits
@@ -128,8 +132,8 @@ class DPSK_OFDM:
             num_error = 0
             num_bits = 0
 
-            with tqdm(total=1000, desc=f'SNR {snr_dB} dB', leave=False) as pbar:
-                while num_error < 1000:
+            with tqdm(total=3000, desc=f'SNR {snr_dB} dB', leave=False) as pbar:
+                while num_error < 3000:
                     signalTx, signalEstimate = self.transmit_and_receive(snr_dB)
                     errors = int(np.bitwise_xor(signalTx, signalEstimate).sum())
                     num_error += errors
@@ -138,8 +142,9 @@ class DPSK_OFDM:
 
             self.ber[i] = num_error / num_bits
 
-        self.utils.plot_ber(self.SNR_dB, self.ber, self.M, self.numBitSymbol)
-        self.utils.save_ber_snr_to_csv(self.SNR_dB, self.ber)
+        #self.utils.plot_ber(self.SNR_dB, self.ber, self.M, self.numBitSymbol)
+        self.utils.save_ber_snr_to_csv(self.SNR_dB, self.ber,filename = filename)
+        #self.utils.save_ber_snr_to_csv(self.SNR_dB,self.utils.calculate_theoretical_ber(self.SNR_dB, self.M, self.numBitSymbol))
 
 """
 # Example usage:

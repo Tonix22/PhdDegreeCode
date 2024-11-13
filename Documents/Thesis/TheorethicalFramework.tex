@@ -1,0 +1,12 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{cite}
+
+\section{Theorethical Framework}
+Industry 4.0 refers to the era of digitalized products, aiming to automate everything through interconnected devices. This involves the Internet of Things (IoT), which connects systems, services, and physical items in advanced ways, enabling control and automation of lights, heating, machinery, and remote monitoring across various fields.\cite{Industria40}
+
+Consequently, there's a need to explore high-mobility scenarios like vehicle-to-vehicle (V2V) communication, where devices connect at varying speeds, causing Doppler effects. The Doppler effect shifts the carrier frequency of electromagnetic waves, distorting the original signal. These signals are packeted in frames using Orthogonal Frequency Division Multiplexing (OFDM), a modulation technique that maps complex data points onto multiple orthogonal subcarriers using sine and cosine waves. OFDM is the standard used in 4G and 5G signals, which are expected to be integral in modern IoT scenarios where high-speed throughput is a priority.
+
+The problem is known as a double dispersive channel because it produces signal shifting in frequency and time. There are several classical techniques to recover transmitted information through the channel; these are called equalizers. Some equalizers require exploring all possible transmitted symbols, like maximum a posteriori methods; others are based on a known channel that is retrieved in a preprocessing stage. However, knowing the channel is not enough because it cancels the Doppler effect but not the ambient noise. Noise is normally measured in dB, which indicates how powerful the noise is with respect to the transmitted signal; this can be known if we transmit a unitary power signal.
+
+Neural networks can approximate any function given a data set of values because they learn a relationship between input vectors and a matrix of weights. As we know, there is a nonlinear continuous relationship between the receiver and transmitter. A network can map the recovered signal, given a good simulation process or previously captured data. A network can learn the equalization process or learn to choose which equalization method is the right one.

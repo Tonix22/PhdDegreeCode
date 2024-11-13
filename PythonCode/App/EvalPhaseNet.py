@@ -28,10 +28,10 @@ INPUT_SIZE = 48
 HIDDEN_SIZE = 96
 LEARNING_RATE = 1e-3
 CONSTELLATION_SIZE = 4
-IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Retsuko.jpeg'  # Replace with your test image path
+IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Cascade.jpeg'  # Replace with your test image path
 
 # Path to the saved checkpoint
-CHECKPOINT_PATH = '/home/tonix/Documents/PhdDegreeCode/PythonCode/DeepLearning/tb_logs/PhaseNet/version_41/checkpoints/epoch=14-step=13170.ckpt'  # Adjust as necessary
+CHECKPOINT_PATH = '/home/tonix/Documents/PhdDegreeCode/PythonCode/DeepLearning/tb_logs/PhaseNet/version_68/checkpoints/epoch=4-step=7930.ckpt'  # Adjust as necessary
 
 def main():
     # Initialize the model (parameters must match those used during training)
@@ -63,11 +63,11 @@ def main():
 
     # Initialize and run the simulation
     ofdm_system = DPSK_OFDM(
-        snr_dB_range=[5, 10, 15, 25, 30],
+        snr_dB_range=[15, 25, 30, 35, 40, 45],
         modulation_order=4,
         fft_size=48,
         num_subcarriers=48,
-        channel_snr=10,
+        channel_snr=30,
         los=True
     )
     
@@ -79,8 +79,8 @@ def main():
         los=True
     )
     
-    ofdm_system.run_simulation(txbits = dataset.databit_encode.frames, network = model)
-    
+    #ofdm_system.run_simulation(txbits = dataset.databit_encode.frames, network = model,filename="ber_snr_data_NN.csv")
+    ofdm_system.run_simulation(filename="ber_snr_data_clean.csv")
 
 if __name__ == '__main__':
     main()

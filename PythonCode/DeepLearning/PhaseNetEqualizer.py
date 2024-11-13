@@ -21,7 +21,7 @@ class ResidualBlock(nn.Module):
 
 # Define the PhaseEqualizer network
 class PhaseEqualizer(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers=5):
+    def __init__(self, input_size, hidden_size, num_layers=10):
         super(PhaseEqualizer, self).__init__()
         # Initialize a list to hold the layers
         layers = [nn.Linear(input_size, hidden_size), nn.LeakyReLU()]
@@ -31,8 +31,9 @@ class PhaseEqualizer(nn.Module):
         # Add the final linear layer to map back to the input size
         layers.append(nn.Linear(hidden_size, input_size))
         # Combine all layers into a Sequential model
-        self.noise_estimate = nn.Sequential(*layers)
+        self.abs_noise_estimate = nn.Sequential(*layers)
+        self.phase_noise_estimate = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, abs, phase):
         # Subtract the network's output from the input to model phase correction
-        return x-self.noise_estimate(x)
+        return abs*self.abs_noise_estimate(abs) , phase - self.phase_noise_estimate(phase)

@@ -17,13 +17,13 @@ from ImageChunksDataSet import ImageChunksDataset  # Adjust the import path as n
 from PhaseNetEqualizer import PhaseEqualizer
 
 # Define hyperparameters
-BATCH_SIZE = 32
-NUM_EPOCHS = 15
+BATCH_SIZE = 128
+NUM_EPOCHS = 5
 LEARNING_RATE = 1e-3
 INPUT_SIZE = 48       # Should match your frame_size in the dataset
 HIDDEN_SIZE = 96      # Size of the hidden layers in the network
 CONSTELLATION_SIZE = 4  # For example, 4-QAM (Quadrature Amplitude Modulation)
-IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Retsuko.jpeg'  # Replace with your image path
+IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Cascade.jpeg'  # Replace with your image path
 
 # Define the PyTorch Lightning Module
 class PhaseNet(pl.LightningModule):
@@ -54,28 +54,28 @@ class PhaseNet(pl.LightningModule):
         self.channel_snr = channel_snr              # Signal-to-noise ratio for the channel
         self.los = los                              # Line-of-sight flag (True or False)
     
-    def forward(self, x):
+    def forward(self,mag,phase):
         # Forward pass through the PhaseEqualizer network
-        return self.angle_net(x)
+        return self.angle_net(mag,phase)
     
     def common_step(self, label, batch):
         input_tensor, target_tensor = batch  # Get input and target tensors from the batch
 
         # Normalize the angle of the input tensor to [0,1]
         # torch.angle returns the angle (phase) of the complex tensor elements
-        input_tensor = (torch.angle(input_tensor).float() / torch.pi)
+        phase_tensor = ((torch.angle(input_tensor).float() / torch.pi)+1)/2
+        
+        norm_factor = torch.max(torch.abs(input_tensor))
+        mag_tensor = (torch.abs(input_tensor)/norm_factor).float()
         
         # Forward pass through the network
-        output = self(input_tensor)
-        
-        # Build real and imaginary parts from the output angles
-        # Map the output back to the range [-π, π] and compute cosine and sine
-        out_real = torch.cos((output) * torch.pi)
-        out_imag = torch.sin((output) * torch.pi)
-        
+        outputMag, outputPhase = self(mag_tensor, phase_tensor)
+
+        target_tensor_norm = (torch.abs(target_tensor) / torch.max(torch.abs(target_tensor))).float()
+        target_tensor_phase = (((torch.angle(target_tensor).float()/torch.pi)+1)/2).float()
         # Compute the loss between the output and target real and imaginary parts
-        loss_real = self.loss_fn(out_real, torch.real(target_tensor).float())
-        loss_imag = self.loss_fn(out_imag, torch.imag(target_tensor).float())
+        loss_real = self.loss_fn(outputMag, target_tensor_norm)
+        loss_imag = self.loss_fn(outputPhase, target_tensor_phase)
         loss = (loss_real + loss_imag) / 2  # Average the real and imaginary losses
         
         self.log(label, loss)  # Log the loss with the given label ('train_loss' or 'val_loss')
