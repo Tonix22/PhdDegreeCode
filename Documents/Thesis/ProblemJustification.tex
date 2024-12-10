@@ -2,14 +2,27 @@
 \usepackage[utf8]{inputenc}
 \usepackage{cite}
 
-\title{Sample LaTeX Document with Bibliography}
-\author{Your Name}
+\title{Data recovery in 5G wireless channels with doppler and delay effect using mixture of experts for enhanced Industry 4.0 mobility.}
+%Recuperación de datos en canales inalámbricos 5G con efecto Doppler y retardo utilizando mezcla de expertos para mejorar la movilidad en la Industria 4.0
+\author{Luis Emilio Tonix Gleason}
 \date{\today}
 
 \begin{document}
 
-
 \maketitle
+
+\section{Problem statement}
+
+While Industry 4.0 is progressively covering more devices, those requiring high mobility and 5G speed are still left out. 
+Highly mobile technologies like autonomous driving, drone surveillance, or fast-moving real-time sensing make Industry 4.0 
+a reality possible; however, message recovery is necessary as channel disruption can compromise data frames. Some of these 
+high mobility applications must be safe and demand a strong response since any undesired outcome could be catastrophic and 
+harmful for human use.
+
+%Por otro lado queda mucho por explorar en el area de redes neuronales y las telecomunicaciones 5G con alta movilidad,
+%se busca encontar metodos que cumplan esta tarea y complementarlos con los metodos clasicos que ya existen en el estado del arte,
+%dado que cada metodo suele tener un area donde se desmpena mejor se busca hacer un clasificador de 
+%sistemas expertos que identique y llame a cada metodosegund sea la necesidad.
 
 \section{Justification}
 
@@ -26,6 +39,42 @@ and could result in the complete loss of equipment or even pose a danger to pers
 
 Doppler effect and latency will cause distortions in the communication system and demand retransmission or reading of corrupted data \cite{FastFading}.
 These elements taken together provide a significant obstacle to reachable: quick fading channels, fast mobility, and high-speed data demand.
+
+\section{Hypothesis}
+
+1. Las señales de alta movilidad en 5G para la transmisión de imágenes y texto pueden recuperarse más fácilmente, 
+ dado que se asume una correlación entre cada trama a diferencia de analisis y recuperacion de datos crudos. 
+
+2. Un clasificador inteligente para redes de alta movilidad de 5G puede evaluar las fortalezas y debilidades de los métodos de recuperación 
+    de datos ya existentes y adaptarlos a las condiciones actuales para optimizar la ecualización de datos, 
+    actuando como un "director" que selecciona y coordina a los metodos expertos.
+
+\section{Marco Teorico}
+
+La comunicación en entornos de alta movilidad es crucial para la transmisión eficiente de datos 
+en aplicaciones como drones o vehículos; estos factores son clave para ampliar las aplicaciones 
+en redes inteligentes y la automatización de la Industria 4.0 con sistemas en tiempo real. 
+Las tecnologías emergentes como 5G, con su capacidad para ofrecer alta velocidad y baja latencia, 
+se presentan como la solución clave para estos entornos. En este contexto, OFDM (Orthogonal Frequency Division Multiplexing) 
+se utiliza como un esquema de modulación avanzado que permite una alta transmisión de datos y un modo de operación de comunicación 
+con diferentes tasas de transmisión. Las tasas de transmisión están representadas por N-PSK o QAM; a mayor tasa de transmisión, 
+se presentan diferentes desafíos como una mayor o menor pérdida de datos, dependiendo de las condiciones del canal de comunicación.
+
+Actualmente, los sistemas ya son inteligentes y adaptativos para variar sus tasas de transmisión, 
+pero no son suficientemente efectivos en la recuperación de datos, donde se utiliza un mismo sistema 
+de recuperación sin importar la procedencia de los datos. A estos sistemas de recuperación se les llama ecualizadores, 
+entre los cuales están los lineales (LMSE, MMSE) y los no lineales (OSIC, NearML). Asimismo, 
+la integración de redes neuronales y métodos de mezcla de expertos ha demostrado ser efectiva para optimizar problemas complejos 
+con múltiples aristas, como ChatGPT, en donde se entiende que un solo sistema de inteligencia artificial 
+por sí mismo no puede generalizar para todos los casos. Es mejor tener un director de redes inteligentes 
+que administre múltiples soluciones optimizadas para cada escenario determinado. Dicho de otro modo, 
+se busca un director que sea una red clasificadora no lineal y multiselectora que pueda elegir el mejor mecanismo 
+de ecualización existente para la recuperación de datos. La ventaja de esto es que se entiende previamente 
+los compromisos inherentes a las diferentes soluciones ya existentes para ecualizar la señal, 
+eliminando la barrera de limitarse a un solo mecanismo de ecualización monótono. 
+Este maestro experto será principalmente útil para aplicaciones de transmisión de texto e imágenes, 
+donde se acota su aplicación pero también se aprovecha la correlación espacial entre los datos para 
+interpolar aquellos que se perdieron en la transmisión.
 
 \bibliographystyle{plain}
 \bibliography{references}

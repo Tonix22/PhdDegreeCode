@@ -1,0 +1,32 @@
+\documentclass[12pt]{report}
+\usepackage{graphics}
+\usepackage[utf8]{inputenc}
+\input{Config/packages}
+\input{Config/options}
+
+\begin{document}
+    \onehalfspacing % for linespacing 1.5, you can turn it off with \singlespacing, e.g. for quotes or tables with multiline cells
+    
+    \include{01-Intro/01-Title}
+    \pagenumbering{roman} \setcounter{page}{1}
+    \include{01-Intro/02-Committee}
+    \include{01-Intro/03-Abstract}
+    \include{01-Intro/04-TOC}
+    \include{01-Intro/05-Acknowledgement}
+    \include{01-Intro/06-Dedicatoria}
+
+    \justifying
+    \pagenumbering{arabic} 
+    \setcounter{page}{1}
+    \include{02-Content/Chapter-01}
+    \include{02-Content/Chapter-02}
+   
+    \appendix
+    %\appendixpage
+    %\addappheadtotoc
+    \input{03-End/appendix}
+
+    % Bibliography
+    %\input{03-End/bibliography-Chapter-01}
+
+\end{document}

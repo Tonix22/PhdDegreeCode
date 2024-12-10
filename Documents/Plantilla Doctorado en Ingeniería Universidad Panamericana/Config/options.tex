@@ -1,0 +1,37 @@
+\geometry{
+  a4paper, % 'a4paper', 'c5paper', 'letterpaper', 'legalpaper'
+  centering, % to center the content between margins
+  bindingoffset=0cm,
+}
+
+
+% Just the Month and Year in the format "May 2023"
+\newdateformat{monthyeardate}{%
+  \monthname[\THEMONTH] \THEYEAR}
+
+
+% Keywords command
+\providecommand{\keywords}[1]
+{
+  \small	
+  \textbf{\textit{Keywords---}} #1
+}
+
+% Table of contents name
+\renewcommand*\contentsname{Table of Contents}
+
+\graphicspath{ {./Figures/} }
+
+\bibliographystyle{apalike}
+
+% Initialize hyperref package
+\hypersetup{
+  plainpages = {false}, % Seitenanker-Formatierung
+  colorlinks = {true}, % Links farbig machen, sonst umrandet
+  linkcolor = {Black}, % normale Links (Inhalt, Abb.)
+  citecolor = {Black}, % Literaturverweise
+  urlcolor = {Black}, % URL-Links
+  bookmarksnumbered = {true}, % Nummerierung der Kapitel
+  bookmarksopen = {false}, % alle aufgebl"attert
+  breaklinks = {true}
+}

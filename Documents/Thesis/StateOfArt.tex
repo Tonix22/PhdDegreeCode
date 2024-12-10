@@ -3,6 +3,12 @@
 \usepackage{cite}
 \section{state of art}
 
-One of the most relevant stages for a neural network (NN) is preprocessing. As seen in the article, values are multiplied by the channel transpose to transform distorted values into a closer cluster. With this, an NN can learn better because the points are closer, and the calculated weights should not be too big. Normally, large weights can lead to difficulties in training because of the gradients.
+In addition to preprocessing techniques and transformer-based neural networks, recent advancements in the state of the art include the application of deep learning models like convolutional neural networks (CNNs) and recurrent neural networks (RNNs) for signal equalization. CNNs can capture spatial features in the data, which is beneficial for handling multipath fading effects in wireless communication. RNNs, on the other hand, are adept at modeling temporal dependencies, making them suitable for channels with memory.
 
-Secondly, there is new research in NNs with transformers that can map and interact with relationships between current data and past data. This makes it more robust because, in the double dispersive logic that involves time and frequency, it can learn more complex patterns over the signal transmission and equalize the signal to become cleaner.
+Moreover, there is growing interest in using generative adversarial networks (GANs) to model and mitigate channel noise. GANs can learn the distribution of the noise and help in generating cleaner signals through adversarial training.
+
+Another significant development is the use of unsupervised and self-supervised learning techniques for equalization, which reduce the reliance on large amounts of labeled data. This is particularly useful in scenarios where acquiring labeled data is challenging.
+
+Researchers are also exploring reinforcement learning approaches to adaptively select the optimal equalization strategy based on changing channel conditions. This can lead to more robust performance in dynamic environments.
+
+Lastly, the integration of hybrid models that combine traditional signal processing methods with neural networks is gaining traction. By leveraging domain knowledge from classical techniques and the learning capabilities of neural networks, these hybrid models can achieve superior performance compared to using either approach alone.
