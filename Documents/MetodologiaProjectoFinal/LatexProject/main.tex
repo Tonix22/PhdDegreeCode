@@ -1,0 +1,39 @@
+\documentclass[12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=red, urlcolor=blue]{hyperref}
+\input{Config/packages}
+\input{Config/options}
+\usepackage[backend=biber,style=numeric]{biblatex}
+\addbibresource{03-End/References_APA.bib}
+
+
+\begin{document}
+\include{01-Intro/Title}
+
+\tableofcontents
+
+\newpage
+% Secciones principales
+\include{01-Intro/Abstract}
+\include{01-Intro/Keywords}
+% Capítulos
+\include{02-Content/Chapter-Introduction}
+\include{02-Content/Chapter-Background}
+\include{02-Content/Chapter-Theoretical_Framework_And_State_Of_The_Art}
+\include{02-Content/Chapter-Problem_Statement}
+\include{02-Content/Chapter-Justification}
+\include{02-Content/Chapter-Objectives}
+\include{02-Content/Chapter-Hypothesis}
+\include{02-Content/Chapter-Methodology}
+\include{02-Content/Chapter-Research_Details}
+\include{02-Content/Chapter-Preliminary_Results}
+\include{02-Content/Chapter-Conclusions}
+
+% Apéndices
+%\include{03-End/Appendices}
+
+% Referencias
+\printbibliography
+
+\end{document}
