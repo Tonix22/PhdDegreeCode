@@ -1,12 +1,19 @@
 \documentclass[12pt]{report}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
+\usepackage{forest}
+\usepackage{pdflscape}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{geometry}
 \usepackage[colorlinks=true, linkcolor=blue, citecolor=red, urlcolor=blue]{hyperref}
 \input{Config/packages}
 \input{Config/options}
 \usepackage[backend=biber,style=numeric]{biblatex}
 \addbibresource{03-End/References_APA.bib}
 
+\renewcommand\thesection{\arabic{section}} % Use single numbers for sections
+\setcounter{section}{0}
 
 \begin{document}
 \include{01-Intro/Title}

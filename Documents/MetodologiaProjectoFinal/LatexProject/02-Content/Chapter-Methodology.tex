@@ -1,3 +1,105 @@
-\section{Chapter-Methodology}
+\section{Methodology}
+\newgeometry{paperwidth=50cm, paperheight=60cm, margin=2cm} 
+\begin{landscape}
+    \begin{center}
+        \Large \textbf{Articles}\\[1em]
+    \end{center}
+    
+    \small
+    
+    \begin{longtable}{p{2.0cm} p{4cm} p{1.0cm} p{1.0cm} p{3.0cm} p{3cm} p{2.0cm} p{3.0cm}}
+        \toprule
+        Author & Title & Source & Year & Link & Main Topic & Technique Model Used & Relevant Results \\
+        \midrule
+        \endfirsthead
+        
+        \toprule
+        Author & Title & Source & Year & Link & Main Topic & Technique Model Used & Relevant Results \\
+        \midrule
+        \endhead
+        
+        \bottomrule
+        \endfoot
+        
+        \endlastfoot
+        Sneha Chennamsetty & Beyond Traditional Techniques: Utilizing Neural Networks to Improve and Compare the Performance of OFDM and OTFS & Research Square & 2024 & \href{https://doi.org/10.21203/rs.3.rs-5017954/v1}{https://doi.org/10.21203/rs.3.rs-5017954/v1} & Mejora de Modulacion & NN, RNN, GRU, LSTM & RNN supero a otros modelos y optimizo OFDM y OTFS, mejorando la comunicacion en canales dinámicos. \\
+        Sneha Chennamsetty & Analysis of Neural Networks Based OTFS Wireless System & IEEE Xplore & 2023 & \href{https://ieeexplore.up.elogim.com/document/10331412}{https://ieeexplore.up.elogim.com/document/10331412} & Mejora de Equalizacion & NN, ANN, DNN & The Neural networks (NN) model has the ability to perform multiple tasks at once \\
+        Sneha Chennamsetty & Cognitive Performance Analysis of the Proposed Testbed for OFDMA Wireless System & IEEE Xplore & 2024 & \href{https://ieeexplore.up.elogim.com/document/10391945}{https://ieeexplore.up.elogim.com/document/10391945} & The proposed testbed consists of software-defined radios (SDRs) that enable the dynamic configuration of radio parameters and the emulation of realistic wireless environments & SDR, NN & Testbeds as learning platform tools for simulating the 4G and 5G cellular networks in real time \\
+        Sneha Chennamsetty & Analysis of PAPR in OTFS Modulation with Classical Selected Mapping Technique & IEEE Xplore & 2023 & \href{https://ieeexplore.ieee.org/abstract/document/10041313}{https://ieeexplore.ieee.org/abstract/document/10041313} & high data rate, better flexibility, requires a less cyclic prefix and less amount of peak to average power ratio (PAPR) & OTFS & his paper presents the PAPR analysis in OTFS modulation by using classical SLM and the obtained results are compared against the OFDM modulation. \\
+        Sneha Chennamsetty & Analysis and emulation of proposed testbed for OFDMA 4G and 5G cellular networks & IEEE Xplore & 2024 & \href{https://onlinelibrary.wiley.com/doi/abs/10.1002/dac.5794}{https://onlinelibrary.wiley.com/doi/abs/10.1002/dac.5794} & Data analiysys for 4G and OFDM signals. & 4G, Real Time & 4G and 5G OFDMA cellular networks in real time \\
+        Wei Wang & Rep ViT: Revisiting Mobile CNN From ViT Perspective & IEEE Xplore & 2023 & \href{https://ieeexplore.ieee.org/document/10359437}{https://ieeexplore.ieee.org/document/10359437} & Vision Computacional & Rep ViT & Adaptacion de CNN en dispositivos moviles con perspectiva ViT para rendimiento superior y eficiencia energética. \\
+        Wei Wang & L2A: Learning Affinity from Attention for Weakly Supervised Continual Semantic Segmentation & IEEE Xplore & 2023 & \href{https://ieeexplore.ieee.org/document/10246306}{https://ieeexplore.ieee.org/document/10246306} & Segmentacion Semántica & Aprendizaje de Afinidad con Atencion & Mejoras en segmentacion débilmente supervisada mediante el aprendizaje de afinidades y atencion. \\
+        Wei Wang & MVEB: Self-Supervised Learning With Multi-View Entropy Bottleneck & IEEE Xplore & 2020 & \href{https://ieeexplore.ieee.org/document/9095223}{https://ieeexplore.ieee.org/document/9095223} & Aprendizaje No Supervisado & Entropieda de Bottleneck Multi-View & Propone el uso de un Bottleneck para mejorar el aprendizaje auto-supervisado mediante múltiples perspectivas. \\
+    \end{longtable}
 
-Aquí va el contenido de Chapter-Methodology.
+    \begin{forest}
+        for tree={
+            grow=east,
+            draw,
+            rounded corners,
+            node options={align=center},
+            text width=4cm,
+            anchor=west,
+            edge={thick},
+            l sep+=10pt,
+        }
+        [Dependent Variables
+            [Signal-to-Noise Ratio (SNR)
+                [Description {Relation between the power of the useful signal and the noise in the communication channel.}]
+                [Category {Continuous Quantitative}]
+                [Unit {SNR value in decibels (dB)}]
+                [Impact {Low SNR reduces data quality and increases the error rate.}]
+            ]
+            [Interference between signals
+                [Description {Alterations in the signal due to the superposition of signals in the same channel.}]
+                [Category {Continuous Quantitative}]
+                [Unit {Percentage of data affected by interference}]
+                [Impact {Increases transmission errors and reduces channel reliability.}]
+            ]
+        ]
+    \end{forest}
+    
+    % Independent Tree
+    \begin{forest}
+        for tree={
+            grow=east,
+            draw,
+            rounded corners,
+            node options={align=center},
+            text width=4cm,
+            anchor=west,
+            edge={thick},
+            l sep+=10pt,
+        }
+        [Independent Variables
+            [Doppler Effect [Speed distortion between two observers]]
+            [Delay [Time delay that signals takes to arrive]]
+        ]
+    \end{forest}
+    
+    % Controlled Tree
+    \begin{forest}
+        for tree={
+            grow=east,
+            draw,
+            rounded corners,
+            node options={align=center},
+            text width=4cm,
+            anchor=west,
+            edge={thick},
+            l sep+=10pt,
+        }
+        [Controlled Variables
+            [Channel Environment
+                [Description {Communication channel conditions, such as noise presence or device density.}]
+                [Categories
+                    [Urban channel]
+                    [Pedestrian]
+                    [High mobility]
+                ]
+            ]
+        ]
+    \end{forest}
+\end{landscape}
+
+\restoregeometry
