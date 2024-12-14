@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Nombre del archivo principal (sin la extensión .tex)
-MAIN="/home/tonix/Documents/PhdDegreeCode/Documents/MetodologiaProjectoFinal/LatexProject/main"
+MAIN="$(pwd)/main"
 
 rm *.pdf
 rm *.aux *.bbl *.bcf *.blg *.log *.toc
@@ -14,3 +14,5 @@ biber "$MAIN"
 # Compilamos dos veces más con pdflatex para actualizar referencias
 pdflatex "$MAIN.tex"
 pdflatex "$MAIN.tex"
+
+okular main.pdf

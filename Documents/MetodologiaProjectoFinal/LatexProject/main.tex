@@ -6,6 +6,7 @@
 \usepackage{longtable}
 \usepackage{booktabs}
 \usepackage{geometry}
+\usepackage{amsmath}
 \usepackage[colorlinks=true, linkcolor=blue, citecolor=red, urlcolor=blue]{hyperref}
 \input{Config/packages}
 \input{Config/options}
@@ -16,29 +17,28 @@
 \setcounter{section}{0}
 
 \begin{document}
-\include{01-Intro/Title}
+\input{01-Intro/Title}
 
 \tableofcontents
 
 \newpage
 % Secciones principales
-\include{01-Intro/Abstract}
-\include{01-Intro/Keywords}
+\input{01-Intro/Abstract}
+\input{01-Intro/Keywords}
 % Capítulos
-\include{02-Content/Chapter-Introduction}
-\include{02-Content/Chapter-Background}
-\include{02-Content/Chapter-Theoretical_Framework_And_State_Of_The_Art}
-\include{02-Content/Chapter-Problem_Statement}
-\include{02-Content/Chapter-Justification}
-\include{02-Content/Chapter-Objectives}
-\include{02-Content/Chapter-Hypothesis}
-\include{02-Content/Chapter-Methodology}
-\include{02-Content/Chapter-Research_Details}
-\include{02-Content/Chapter-Preliminary_Results}
-\include{02-Content/Chapter-Conclusions}
+\input{02-Content/Chapter-Introduction}
+\input{02-Content/Chapter-Background}
+\input{02-Content/Chapter-Theoretical_Framework_And_State_Of_The_Art}
+\input{02-Content/Chapter-Problem_Statement}
+\input{02-Content/Chapter-Justification}
+\input{02-Content/Chapter-Objectives}
+\input{02-Content/Chapter-Hypothesis}
+\input{02-Content/Chapter-Methodology}
+\input{02-Content/Chapter-Preliminary_Results}
+\input{02-Content/Chapter-Conclusions}
 
 % Apéndices
-%\include{03-End/Appendices}
+%\input{03-End/Appendices}
 
 % Referencias
 \printbibliography

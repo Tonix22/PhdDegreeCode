@@ -1,3 +1,163 @@
-\subsection{Theoretical Framework And State Of The Art}
+\subsection{Theoretical Framework}
 
-Aquí va el contenido de Chapter Theoretical Framework And State Of The Art.
+\subsubsection{Doppler Effect}
+The Doppler frequency shift is a phenomenon in vehicular communication, affecting both vehicle-to-vehicle (V2V) and vehicle-to-infrastructure (V2I) channels. It arises due to the relative motion between the transmitter (Tx) and receiver (Rx), which causes a shift in the observed frequency of the transmitted signal. The Doppler frequency $f_d$ is mathematically expressed as:
+
+\begin{equation}
+f_d = \frac{v}{c} f_c \cos{\alpha},
+\label{eq:doppler_shift}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item $v$ is the relative velocity between Tx and Rx (in m/s),
+    \item $c$ is the speed of light ($c \approx 3 \times 10^8$ m/s),
+    \item $f_c$ is the carrier frequency (in Hz),
+    \item $\alpha$ is the angle between the direction of movement and the propagation path.
+\end{itemize}
+
+The Doppler shift can take on positive or negative values depending on the relative motion:
+\begin{itemize}
+    \item $f_d > 0$: The Tx and Rx are moving toward each other.
+    \item $f_d < 0$: The Tx and Rx are moving away from each other.
+    \item $f_d = 0$: The motion is perpendicular to the propagation path ($\alpha = 90^\circ$).
+\end{itemize}
+
+The maximum Doppler shift occurs when $\alpha = 0^\circ$, and the minimum occurs when $\alpha = 180^\circ$. The Doppler bandwidth, representing the range of frequency variations, is given by:
+
+\begin{equation}
+B_d = 2 f_d^{max},
+\label{eq:doppler_bandwidth}
+\end{equation}
+
+where $f_d^{max}$ is the maximum Doppler frequency. This bandwidth reflects the time-selective nature of the channel gain in high-mobility environments.
+
+The distribution of Doppler frequencies often follows the classical Jakes spectrum, which assumes isotropic scattering and uniform power distribution around the receiver. The spectral density of the Doppler shift is given by:
+
+\begin{equation}
+S(f) = \frac{1}{\pi f_d^{\text{max}} \sqrt{1 - \left( \frac{f}{f_d^{\text{max}}} \right)^2 }},
+\label{eq:jakes_spectrum}
+\end{equation}
+
+for $|f| \leq f_d^{\text{max}}$. The Jakes model provides a theoretical foundation for analyzing and simulating the impact of Doppler effects on vehicular communication channels.
+
+In V2V scenarios, the rapid relative velocities and varying angles of arrival with Doppler effects, which must be accounted for in the design of robust communication systems.
+
+\subsubsection{OFDM}
+
+Orthogonal Frequency Division Multiplexing (OFDM) is a widely used modulation technique in wireless communication systems, and used in high-mobility scenarios like vehicle-to-vehicle (V2V) communication. By dividing the frequency spectrum into orthogonal subcarriers, OFDM effectively mitigates multipath propagation. However, Doppler effects in V2V introduce inter-carrier interference (ICI), degrading system performance.
+
+\begin{itemize}
+    \item The transmitter maps data symbols to subcarriers and uses the IFFT to convert them to the time domain.
+    \item A cyclic prefix (CP) is added to mitigate inter-symbol interference (ISI).
+    \item The transmitted signal passes through a channel with impulse response \( h(t) \), represented in the frequency domain by \( H \).
+\end{itemize}
+At the receiver, the CP is removed, and the FFT converts the signal back to the frequency domain for processing.
+
+\subsubsection{Mathematical Model}
+The received signal in the frequency domain is given by:
+\begin{equation}
+Y = HX + w,
+\end{equation}
+where:
+\begin{itemize}
+    \item \( Y \): Received signal vector,
+    \item \( H \): Channel matrix (frequency response for each subcarrier),
+    \item \( X \): Transmitted symbol vector,
+    \item \( w \): Additive noise vector.
+\end{itemize}
+
+he Linear Minimum Mean Square Error (LMMSE) equalizer is a widely used technique in OFDM systems to mitigate the effects of channel distortion and noise. In the frequency domain, the received signal for an OFDM subcarrier is represented as:
+
+\begin{equation}
+Y_k = H_k X_k + W_k,
+\label{eq:ofdm_model}
+\end{equation}
+
+where:
+\begin{itemize}
+    \item \( Y_k \): Received symbol on the \( k \)-th subcarrier,
+    \item \( H_k \): Channel frequency response for the \( k \)-th subcarrier,
+    \item \( X_k \): Transmitted symbol on the \( k \)-th subcarrier,
+    \item \( W_k \): Additive noise on the \( k \)-th subcarrier.
+\end{itemize}
+
+\subsubsection{LMMSE Equalizer Matrix Form}
+The LMMSE equalizer aims to minimize the mean square error (MSE) between the transmitted and estimated symbols. The equalized symbol vector \( \hat{\mathbf{X}} \) is given by:
+
+\begin{equation}
+\hat{\mathbf{X}} = \mathbf{G}_{\text{LMMSE}} \mathbf{Y},
+\label{eq:lmmse_estimation}
+\end{equation}
+
+where \( \mathbf{G}_{\text{LMMSE}} \) is the equalizer matrix derived as:
+
+\begin{equation}
+\mathbf{G}_{\text{LMMSE}} = \left( \mathbf{H}^H \mathbf{H} + \frac{\sigma_w^2}{\sigma_x^2} \mathbf{I} \right)^{-1} \mathbf{H}^H,
+\label{eq:lmmse_weight_matrix}
+\end{equation}
+
+with:
+\begin{itemize}
+    \item \( \mathbf{H}^H \): Hermitian transpose (conjugate transpose) of the channel matrix \( \mathbf{H} \),
+    \item \( \sigma_w^2 \): Noise variance,
+    \item \( \sigma_x^2 \): Transmitted symbol variance,
+    \item \( \mathbf{I} \): Identity matrix.
+\end{itemize}
+
+The term \( \mathbf{H}^H \mathbf{H} \) represents the channel correlation, while the regularization term \( \frac{\sigma_w^2}{\sigma_x^2} \mathbf{I} \) balances noise suppression and channel inversion. The inverse operation ensures the optimal compromise between removing channel effects and avoiding noise amplification.
+
+The matrix inversion in \( \mathbf{G}_{\text{LMMSE}} \) is computationally intensive, especially for large channel matrices. To reduce complexity, iterative methods or approximations are often employed in practical implementations.
+
+\subsubsection{Multilayer Perceptron as a Function Approximator}
+
+A multilayer perceptron (MLP) is a type of feedforward neural network that is widely used as a function approximator. It consists of layers of interconnected neurons, where each neuron applies a linear transformation followed by a non-linear activation function. The MLP approximates a complex function \( F \) by iteratively adjusting its weights \( W \) through training.
+
+\subsubsection{Mathematical Formulation}
+Given an input vector \( \mathbf{X} \), an MLP processes it layer by layer. For a single layer, the output is computed as:
+\begin{equation}
+\mathbf{Z} = \phi(\mathbf{W} \mathbf{X} + \mathbf{b}),
+\label{eq:mlp_layer}
+\end{equation}
+where:
+\begin{itemize}
+    \item \( \mathbf{W} \): Weight matrix for the layer,
+    \item \( \mathbf{b} \): Bias vector,
+    \item \( \phi(\cdot) \): Non-linear activation function (e.g., ReLU, sigmoid, or tanh),
+    \item \( \mathbf{Z} \): Output of the layer.
+\end{itemize}
+
+For an MLP with multiple layers, the output \( \mathbf{O} \) is expressed as:
+\begin{equation}
+\mathbf{O} = F(\mathbf{X}; \Theta),
+\label{eq:mlp_output}
+\end{equation}
+where \( F \) is the function implicitly represented by the MLP, and \( \Theta = \{ \mathbf{W}_1, \mathbf{b}_1, \mathbf{W}_2, \mathbf{b}_2, \dots \} \) represents the set of weights and biases for all layers.
+
+\subsubsection{Training the MLP}
+The weights \( \Theta \) are learned by minimizing a loss function \( \mathcal{L} \) using a training dataset \(\{\mathbf{X}_i, \mathbf{Y}_i\}\). For regression problems, the mean squared error (MSE) is a common choice:
+\begin{equation}
+\mathcal{L} = \frac{1}{N} \sum_{i=1}^N \|\mathbf{Y}_i - F(\mathbf{X}_i; \Theta)\|^2.
+\label{eq:mlp_loss}
+\end{equation}
+The minimization is typically performed using gradient-based methods, such as stochastic gradient descent (SGD) or Adam.
+
+\subsubsection{Relation to Function Approximation}
+The non-linearity introduced by the activation function \( \phi(\cdot) \) enables the MLP to approximate complex non-linear mappings between input and output spaces. The universal approximation theorem states that an MLP with at least one hidden layer and sufficient neurons can approximate any continuous function to arbitrary accuracy, given enough training data.
+
+\subsubsection{Approximating the LMMSE Solution}
+The LMMSE equalizer in matrix form requires solving the following equation:
+\begin{equation}
+\mathbf{G}_{\text{LMMSE}} = \left( \mathbf{H}^H \mathbf{H} + \frac{\sigma_w^2}{\sigma_x^2} \mathbf{I} \right)^{-1} \mathbf{H}^H.
+\label{eq:lmmse_solution}
+\end{equation}
+This solution involves matrix inversion, which can be computationally expensive.
+
+An MLP can approximate this mapping by treating the inputs \( \mathbf{X} \) as the noisy received signal \( \mathbf{Y} \) and training the network to output the equalized symbols. The MLP implicitly learns the relationship between the input, channel \( \mathbf{H} \), and noise statistics \( \sigma_w^2 \), approximating the function:
+\begin{equation}
+F(\mathbf{Y}) \approx \mathbf{G}_{\text{LMMSE}} \mathbf{Y}.
+\end{equation}
+
+\subsection{State of art}
+
+adfad
