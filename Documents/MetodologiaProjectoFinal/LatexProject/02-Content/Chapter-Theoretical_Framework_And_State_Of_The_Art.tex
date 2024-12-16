@@ -160,4 +160,10 @@ F(\mathbf{Y}) \approx \mathbf{G}_{\text{LMMSE}} \mathbf{Y}.
 
 \subsection{State of art}
 
-adfad
+While there may be concerns about execution complexity over time, one of the key advantages of neural networks is their ability to be highly parallelized. This makes them suitable for deployment on edge devices using tools such as TinyML, enabling efficient execution in resource-constrained environments.
+
+Given that shifting can produce ICI, a proposed model uses a deep neural network (DNN) to mitigate the impairment. However, this approach may sometimes be suboptimal because multiple layers can cause the original function to vanish, leading to information loss across layers. To address this, shortcut connections are introduced between layers, a technique commonly known as residuals. For this reason, the primary architecture used in this article consists of blocks of ResNets \cite{9723316}.
+
+There are other types of technologies in the deep learning domain that analyze recent frames and possess short-term memory, enabling them to equalize the signal on average. A natural progression is to consider that ICI is essentially the overlapping of carriers, where interactions occur between them over time. For instance, the first frame affects the second, the second affects the third, and so on. The concept behind Long Short-Term Memory (LSTM) networks is to capture both long- and short-term dependencies between frames, storing them in short-term memory to reduce the impairments caused by signal delays of bouncing in the channel scenario \cite{10244541}.
+
+In Section~\ref{sec:methodology}, the table summarizes the work of two researchers that has found relevant features of NN and OFDM to solve the problem channel impairments. The first is Sneha Chennamsetty, who has focused more on LSTM modeling, emphasizing the importance of data sequences\cite{chennamsetty2024beyond}\cite{10331412}\cite{10391945}\cite{10041313}. The second is Wei Wang, who has concentrated on CNN and Vision Transformer (ViT) models, which combine sequential and non-sequential approaches but are specifically designed for channels treated as images \cite{10359437}\cite{10246306}\cite{9095223}.
