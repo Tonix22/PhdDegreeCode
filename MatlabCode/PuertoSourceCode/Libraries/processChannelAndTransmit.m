@@ -1,7 +1,4 @@
-function [signalTx, signalEstimate] = processChannelAndTransmit(H, M, FFTSize, SNR_dB, numSC)
-    % Generate random data symbols
-    signalTx = generateRandomData(M, numSC);
-    
+function [signalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC)    
     % Modulate data with PSK
     pskSignal = applyPSKModulation(signalTx, M);
 
@@ -9,11 +6,11 @@ function [signalTx, signalEstimate] = processChannelAndTransmit(H, M, FFTSize, S
     DPSKsignalTx = applyDPSKEncoding(pskSignal);
 
     % Process channel
-    G = processChannel(H);
-    RxSignal = G * DPSKsignalTx;
+    %G = processChannel(H);
+    %RxSignal = G * DPSKsignalTx;
 
     % OFDM modulation
-    OFDMsignalTx = ofdmModulate(RxSignal, FFTSize);
+    OFDMsignalTx = ofdmModulate(DPSKsignalTx, FFTSize);
 
     % Pass through AWGN channel using SNR
     signalRx = awgn(OFDMsignalTx, SNR_dB);

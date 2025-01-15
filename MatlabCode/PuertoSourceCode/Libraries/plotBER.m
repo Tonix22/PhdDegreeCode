@@ -20,7 +20,4 @@ function plotBER(SNR_dB, ber, M, numBitSymbol, plotName, berTheoretical)
         plotName = 'BER_plot_SNR'; % Default name if not provided
     end
     saveas(gcf, [plotName, '.png']); % Save as PNG file
-
-    % Close the figure to prevent unnecessary display
-    close(gcf);
 end
