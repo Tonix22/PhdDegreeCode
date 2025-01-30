@@ -7,6 +7,7 @@ from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks import TQDMProgressBar
 import numpy as np
+import glob
 
 # Add sys.path to include the DataLoaders directory for custom imports
 parent_dir_app = os.path.abspath(os.path.join(os.path.dirname(__file__), '../DataLoaders'))
@@ -15,13 +16,14 @@ sys.path.insert(0, parent_dir_app)
 # Import your custom data loader
 from ImageChunksDataSet import ImageChunksDataset  # Adjust the import path as necessary
 from PhaseNetEqualizer import PhaseEqualizer
+from PhaseEqualizeConv1d import PhaseEqualizerConv1D
 
 # Define hyperparameters
-BATCH_SIZE = 128
-NUM_EPOCHS = 5
+BATCH_SIZE = 32
+NUM_EPOCHS = 60
 LEARNING_RATE = 1e-3
-INPUT_SIZE = 48       # Should match your frame_size in the dataset
-HIDDEN_SIZE = 96      # Size of the hidden layers in the network
+INPUT_SIZE = 64     # Should match your frame_size in the dataset
+HIDDEN_SIZE = 128      # Size of the hidden layers in the network
 CONSTELLATION_SIZE = 4  # For example, 4-QAM (Quadrature Amplitude Modulation)
 IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Cascade.jpeg'  # Replace with your image path
 
@@ -34,8 +36,8 @@ class PhaseNet(pl.LightningModule):
         learning_rate,
         image_path,
         constellation_size,
-        style='Traditional',
-        channel_snr=30,
+        style='DPSK',
+        channel_snr=40,
         los=True
     ):
         super(PhaseNet, self).__init__()
@@ -43,9 +45,11 @@ class PhaseNet(pl.LightningModule):
         
         # Initialize the PhaseEqualizer network
         self.angle_net = PhaseEqualizer(input_size, hidden_size)
+        #self.angle_net = PhaseEqualizerConv1D(input_size,hidden_size)
         
         # Define the loss function (Mean Squared Error)
-        self.loss_fn = nn.MSELoss()
+        #self.loss_fn = nn.MSELoss()
+        self.loss_fn = nn.BCELoss()
         
         # Store dataset parameters
         self.image_path = image_path                # Path to the image used in the dataset
@@ -53,31 +57,27 @@ class PhaseNet(pl.LightningModule):
         self.style = style                          # Transmission style ('Traditional' or 'DPSK')
         self.channel_snr = channel_snr              # Signal-to-noise ratio for the channel
         self.los = los                              # Line-of-sight flag (True or False)
+        self.alpha = 0.1
     
-    def forward(self,mag,phase):
+    def forward(self,phase):
         # Forward pass through the PhaseEqualizer network
-        return self.angle_net(mag,phase)
+        return self.angle_net(phase)
     
     def common_step(self, label, batch):
         input_tensor, target_tensor = batch  # Get input and target tensors from the batch
 
         # Normalize the angle of the input tensor to [0,1]
         # torch.angle returns the angle (phase) of the complex tensor elements
-        phase_tensor = ((torch.angle(input_tensor).float() / torch.pi)+1)/2
-        
-        norm_factor = torch.max(torch.abs(input_tensor))
-        mag_tensor = (torch.abs(input_tensor)/norm_factor).float()
+        phase_tensor = (torch.angle(input_tensor) / torch.pi)
         
         # Forward pass through the network
-        outputMag, outputPhase = self(mag_tensor, phase_tensor)
-
-        target_tensor_norm = (torch.abs(target_tensor) / torch.max(torch.abs(target_tensor))).float()
-        target_tensor_phase = (((torch.angle(target_tensor).float()/torch.pi)+1)/2).float()
-        # Compute the loss between the output and target real and imaginary parts
-        loss_real = self.loss_fn(outputMag, target_tensor_norm)
-        loss_imag = self.loss_fn(outputPhase, target_tensor_phase)
-        loss = (loss_real + loss_imag) / 2  # Average the real and imaginary losses
+        outputPhase = self(phase_tensor.float())
         
+        pred = ((outputPhase))*torch.pi
+        pred = torch.polar(torch.abs(input_tensor).float(),pred)
+        arg = 1-torch.abs(input_tensor.float() - pred)**2
+        loss = torch.exp(-1*self.alpha*arg)/2
+        loss = torch.sum(loss)
         self.log(label, loss)  # Log the loss with the given label ('train_loss' or 'val_loss')
         return loss  # Return the loss value
         
@@ -130,8 +130,16 @@ class PhaseNet(pl.LightningModule):
         )
         return val_loader
 
+# Automatically find the latest checkpoint
+def get_latest_checkpoint(log_dir):
+    checkpoint_files = glob.glob(f"{log_dir}/**/checkpoints/*.ckpt", recursive=True)
+    return max(checkpoint_files, key=os.path.getctime) if checkpoint_files else None
+
 if __name__ == '__main__':
     # Initialize the model with the specified parameters
+    # Path to your logger directory
+    latest_checkpoint = get_latest_checkpoint("tb_logs/PhaseNet")
+    
     model = PhaseNet(
         input_size=INPUT_SIZE,
         hidden_size=HIDDEN_SIZE,
@@ -143,13 +151,23 @@ if __name__ == '__main__':
         los=True
     )
     
-    # Initialize the trainer with the specified configurations
-    trainer = Trainer(
-        max_epochs=NUM_EPOCHS,                           # Number of training epochs
-        accelerator='gpu' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
-        callbacks=[TQDMProgressBar(refresh_rate=10)],    # Progress bar callback
-        logger=pl.loggers.TensorBoardLogger("tb_logs", name="PhaseNet")  # TensorBoard logger
-    )
-    
+    if latest_checkpoint:
+        print(f"Resuming from checkpoint: {latest_checkpoint}")
+        trainer = Trainer(
+            max_epochs=NUM_EPOCHS,
+            accelerator='gpu' if torch.cuda.is_available() else 'cpu',
+            callbacks=[TQDMProgressBar(refresh_rate=10)],
+            logger=pl.loggers.TensorBoardLogger("tb_logs", name="PhaseNet"),
+            resume_from_checkpoint=latest_checkpoint
+        )
+    else:
+        print("No checkpoint found. Starting training from scratch.")
+        trainer = Trainer(
+            max_epochs=NUM_EPOCHS,
+            accelerator='gpu' if torch.cuda.is_available() else 'cpu',
+            callbacks=[TQDMProgressBar(refresh_rate=10)],
+            logger=pl.loggers.TensorBoardLogger("tb_logs", name="PhaseNet")
+        )
+        
     # Start the training process
     trainer.fit(model)

@@ -48,6 +48,6 @@ def plot_csv_files(csv_files, output_filename="output_plot.png"):
 
 # Example usage
 
-csv_files = ["ber_snr_data_clean.csv",  "ber_snr_data_NN.csv"]
-output_filename = "combined_plot.png"
+csv_files = ["ber_snr_DPSK_No_NN.csv",  "/home/tonix/Documents/PhdDegreeCode/ber_snr_DPSK_NN.csv"]
+output_filename = "Network vs DPSK.png"
 plot_csv_files(csv_files, output_filename)

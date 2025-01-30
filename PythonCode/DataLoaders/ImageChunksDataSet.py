@@ -19,8 +19,9 @@ from DataBinEncoder import EncodeDataIntoBits  # type: ignore
 from ConstelationCoder import ConstelationCoder, Modulation  # type: ignore
 from DPSK import DPSK_OFDM  # type: ignore
 
+
 class ImageChunksDataset(Dataset):
-    def __init__(self, image_path, constelation_size, style='Traditional', channel_snr=30, los=True):
+    def __init__(self, image_path, constelation_size, style='Traditional', channel_snr=25, los=True):
         """
         PyTorch Dataset class for loading and processing image data into chunks suitable for transmission over a channel.
 
@@ -40,7 +41,7 @@ class ImageChunksDataset(Dataset):
         self.image.close()  # Close the image file
         
         self.constelation_size = constelation_size  # Constellation size (e.g., 4 for QPSK)
-        self.frame_size = 96  # Frame size (e.g., 96 symbols per frame as per V2V standard)
+        self.frame_size = 128  # Frame size (e.g., 96 symbols per frame as per V2V standard)
         self.bit_slice = int(math.log2(self.constelation_size))  # Number of bits per symbol
         self.channel_snr = channel_snr  # Channel SNR in dB
         self.los = los  # Line-of-sight flag
@@ -93,20 +94,19 @@ class ImageChunksDataset(Dataset):
         """
         # Get the bits for the given frame
         self.tx_bits = self.databit_encode.frames[idx, :]
+        self.tx_bits[0] = 0
+        self.tx_bits[1] = 0
         # Modulate the bits to symbols using the constellation coder
         target = self.coder.Encode(self.tx_bits)
 
         if self.style == 'DPSK':
             # DPSK encoding
             DPSK_signalTx = self.dpsk.applyDPSKEncoding(target)
-            # Get the channel matrix
-            G = self.channel.getChannel()
             # Pass the DPSK signal through the channel and add noise
-            signalRx = self.dpsk.DPSK_channel_and_Noise(DPSK_signalTx, G, self.channel_snr)
-            
+            signalRx = self.dpsk.DPSK_channel_and_Noise(DPSK_signalTx, self.channel_snr)
             # OFDM demodulation and differential decoding
-            OFDM_signalRx = self.dpsk.utils.ofdm_demodulate(signalRx)
-            input_signal = self.dpsk.applyDPSKDecoding(OFDM_signalRx)
+            input_signal = self.dpsk.utils.ofdm_demodulate(signalRx)
+            #input_signal = self.dpsk.applyDPSKDecoding(OFDM_signalRx)
             
         elif self.style == 'Traditional':
             # Traditional transmission through the channel

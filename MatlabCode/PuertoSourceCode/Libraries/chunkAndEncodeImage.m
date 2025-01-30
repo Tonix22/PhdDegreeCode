@@ -1,11 +1,14 @@
-function symbols = chunkAndEncodeImage(M, numSC, imagePath)
+function symbols = chunkAndEncodeImage(M, numSC, image)
     % M: Number of levels for encoding (related to log2(M) bits)
     % numSC: Number of blocks of log2(M) bits
     % imagePath: Path to the image
 
     % Read the image
-    img = imread(imagePath);
-
+    if ischar(image) || isstring(image)
+        img = imread(image);
+    else
+        img = image;
+    end
     % Ensure the image is in uint8 format
     if ~isa(img, 'uint8')
         error('The image must be in uint8 format.');
@@ -36,5 +39,5 @@ function symbols = chunkAndEncodeImage(M, numSC, imagePath)
     symbols = reshape(symbols, numSC, []).';
 
     % Output the symbols and number of padding bits
-    fprintf('Image chunked and encoded into %d symbols.\n', size(symbols));
+    %fprintf('Image chunked and encoded into %d symbols.\n', size(symbols));
 end

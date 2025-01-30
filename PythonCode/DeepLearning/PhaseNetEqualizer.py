@@ -1,5 +1,6 @@
 
 import torch.nn as nn
+import torch
 # Define the ResidualBlock class used in the neural network
 class ResidualBlock(nn.Module):
     def __init__(self, size):
@@ -7,7 +8,7 @@ class ResidualBlock(nn.Module):
         # Linear layer that maps from size to size
         self.linear = nn.Linear(size, size)
         # Activation function
-        self.activation = nn.LeakyReLU()
+        self.activation = nn.GELU()
         # Layer normalization to stabilize learning
         self.Norm = nn.LayerNorm(size)
 
@@ -16,12 +17,12 @@ class ResidualBlock(nn.Module):
         out = self.linear(x)    # Apply linear transformation
         out = self.Norm(out)    # Apply layer normalization
         out = self.activation(out)  # Apply activation function
-        out += residual         # Add the input (residual connection)
+        out -= residual         # Add the input (residual connection)
         return out
 
 # Define the PhaseEqualizer network
 class PhaseEqualizer(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers=10):
+    def __init__(self, input_size, hidden_size, num_layers=5):
         super(PhaseEqualizer, self).__init__()
         # Initialize a list to hold the layers
         layers = [nn.Linear(input_size, hidden_size), nn.LeakyReLU()]
@@ -31,9 +32,8 @@ class PhaseEqualizer(nn.Module):
         # Add the final linear layer to map back to the input size
         layers.append(nn.Linear(hidden_size, input_size))
         # Combine all layers into a Sequential model
-        self.abs_noise_estimate = nn.Sequential(*layers)
         self.phase_noise_estimate = nn.Sequential(*layers)
 
-    def forward(self, abs, phase):
+    def forward(self, phase):
         # Subtract the network's output from the input to model phase correction
-        return abs*self.abs_noise_estimate(abs) , phase - self.phase_noise_estimate(phase)
+        return  self.phase_noise_estimate(phase)

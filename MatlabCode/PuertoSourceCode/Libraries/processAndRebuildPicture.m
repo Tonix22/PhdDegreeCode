@@ -17,6 +17,6 @@ function processAndRebuildPicture(symbols, M, numSC, snr, imagePath)
     rebuiltImage = decodeAndRebuildImage(processedSymbols, M, numSC, imagePath);
 
     % Display the rebuilt image
-    imshow(rebuiltImage);
+    imwrite(rebuiltImage, 'noise_image.jpg');
     title('Rebuilt Image After Processing');
 end

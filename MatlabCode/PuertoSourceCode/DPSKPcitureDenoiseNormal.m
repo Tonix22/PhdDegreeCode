@@ -1,0 +1,11 @@
+I   = imread("noise_image.jpg");
+[noisyR,noisyG,noisyB] = imsplit(I);
+net = denoisingNetwork("dncnn");
+denoisedR = denoiseImage(noisyR,net);
+denoisedG = denoiseImage(noisyG,net);
+denoisedB = denoiseImage(noisyB,net);
+denoisedRGB = cat(3, denoisedR,denoisedG,denoisedB);
+imwrite(denoisedRGB, 'clean_image.jpg');
+Clean = imread("original_image.jpg");
+noisyPSNR = psnr(I,Clean);
+fprintf("\n The PSNR value of the noisy image is %0.4f.",noisyPSNR);

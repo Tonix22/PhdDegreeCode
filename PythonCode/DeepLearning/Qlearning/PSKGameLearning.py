@@ -1,303 +1,299 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import random
+import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
-import numpy as np
-import random
 
-################################################################################
-# 1. Utilities: QPSK Mod/Demod, AWGN, BER, One-hot
-################################################################################
+###############################################################################
+# Adjust path so we can import DPSK_OFDM
+###############################################################################
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../App'))
+sys.path.insert(0, parent_dir)
 
-def qpsk_modulate(symbols, phase_offset):
+from DPSK import DPSK_OFDM  # <-- Make sure this matches your file name & class location
+
+###############################################################################
+# 1) The Environment
+###############################################################################
+
+class FeedForwardNet(nn.Module):
     """
-    QPSK modulator with an added phase offset.
-    symbols: 1D array of size [num_symbols], each in {0,1,2,3}
-    phase_offset: float, offset in radians
-    Returns complex array of shape [num_symbols].
+    Example feed-forward net that processes:
+      - Real+Imag input (length=2*num_bits)
+      - A single scalar offset (guessed offset in radians)
+    Then outputs a length=num_bits vector (e.g., bit likelihoods).
     """
-    # Map {0,1,2,3} to QPSK angles {0, pi/2, pi, 3pi/2}
-    base_phases = np.array([0, np.pi/2, np.pi, 3*np.pi/2])
-    # Gather the base phase per symbol
-    base_phase_per_symbol = base_phases[symbols]
-    # Add the offset
-    total_phase = base_phase_per_symbol + phase_offset
-    # Convert to complex
-    i = np.cos(total_phase)
-    q = np.sin(total_phase)
-    return i + 1j*q
+    def __init__(self, input_dim, offset_dim, output_dim):
+        super(FeedForwardNet, self).__init__()
+        # We'll embed the offset dimension into a small hidden layer
+        self.offset_fc = nn.Linear(offset_dim, 8)  # offset => 8 features
 
-def qpsk_demodulate(rx_symbols, phase_offset):
+        # Then process the real+imag with a separate linear
+        self.signal_fc = nn.Linear(input_dim, 128)
+
+        # Combine them
+        self.fc_combined = nn.Linear(128 + 8, 64)
+        self.fc_out = nn.Linear(64, output_dim)
+
+    def forward(self, signal_in, offset_in):
+        """
+        signal_in: shape [batch_size, input_dim] (real+imag)
+        offset_in: shape [batch_size, offset_dim] (scalar offset)
+        Returns: shape [batch_size, output_dim]
+        """
+        offset_feat = torch.relu(self.offset_fc(offset_in))  
+        sig_feat = torch.relu(self.signal_fc(signal_in))
+        combined = torch.cat([sig_feat, offset_feat], dim=1)
+        x = torch.relu(self.fc_combined(combined))
+        out = torch.tanh(self.fc_out(x))
+        return out
+
+class DPSKPhaseOffsetEnv:
     """
-    QPSK demodulator, attempting to correct by 'phase_offset'.
-    rx_symbols: complex array of shape [num_symbols].
-    phase_offset: float, offset in radians (our chosen correction).
-    Returns array of hard-decision symbols in {0,1,2,3}.
+    A single-step environment that uses your DPSK_OFDM system.
+    Steps:
+      1) On reset(), we:
+         - generate random bits
+         - force first N bits to 0
+         - DPSK encode
+         - apply random phase offset + noise
+      2) On step(action), we:
+         - interpret action as guessed offset
+         - feed offset + signal into a feed-forward net (placeholder)
+         - decode => get bit errors => compute reward => done=True
     """
-    # Apply the negative of the offset as "correction"
-    corrected_symbols = rx_symbols * np.exp(-1j*phase_offset)
 
-    # Compute angles in [0..2pi)
-    angles = np.angle(corrected_symbols)
-    angles = np.mod(angles, 2*np.pi)
+    def __init__(self, numSC=48, N=0, snr_dB=10.0, offset_size=8):
+        """
+        Args:
+            numSC (int): Number of subcarriers => we have 2*numSC bits.
+            N (int): Number of leading bits forced to 0.
+            snr_dB (float): SNR in dB for AWGN.
+            offset_size (int): Number of discrete offset guesses in [0..offset_size-1].
+        """
+        # Create your DPSK_OFDM system
+        self.ofdm_system = DPSK_OFDM(
+            snr_dB_range=[snr_dB],
+            modulation_order=4,   # QPSK
+            fft_size=numSC,       # We'll use 'numSC' for FFT size as well
+            num_subcarriers=numSC,
+            channel_snr=snr_dB,
+            los=True
+        )
+        
+        self.numSC = numSC
+        self.num_bits = 2 * self.numSC
+        self.N = N
+        self.snr_dB = snr_dB
 
-    # Decision boundaries for QPSK: we partition [0..2pi) into 4 quadrants
-    # 0 => [0..pi/2)
-    # 1 => [pi/2..pi)
-    # 2 => [pi..3pi/2)
-    # 3 => [3pi/2..2pi)
-    detected_symbols = np.zeros_like(angles, dtype=int)
-    detected_symbols[(angles >= 0) & (angles < np.pi/2)] = 0
-    detected_symbols[(angles >= np.pi/2) & (angles < np.pi)] = 1
-    detected_symbols[(angles >= np.pi) & (angles < 3*np.pi/2)] = 2
-    detected_symbols[(angles >= 3*np.pi/2) & (angles < 2*np.pi)] = 3
+        # We'll define discrete actions: offset_idx in [0..offset_size-1]
+        # offset = 2*pi*(offset_idx/offset_size)
+        self.offset_size = offset_size
+        self.action_space = list(range(offset_size))
 
-    return detected_symbols
+        self.done = False
 
-def add_awgn(tx_symbols, snr_db):
+        # The feed-forward net that processes (Rx_signal, guessed_offset).
+        # In a real system, you might let the RL agent control this net’s parameters,
+        # but here we keep it in the env as a placeholder.
+        self.ff_net = FeedForwardNet(
+            input_dim=self.numSC * 2,   # 48 * 2 = 96 if numSC=48
+            offset_dim=1,
+            output_dim=self.num_bits    # 2 * numSC = 96 bits if QPSK
+        )
+
+
+    def reset(self):
+        """Reset environment for a new single-step episode."""
+        self.done = False
+
+        # 1) Generate random bits
+        signalTx = np.random.randint(0, 2, self.num_bits).astype(np.int32)
+
+        # 2) Force first N bits to 0
+        if self.N > 0:
+            signalTx[: self.N] = 0
+
+        # 3) DPSK encode
+        dpsk_signal = self.ofdm_system.DPSK_encoder(signalTx)
+
+        # 4) Random offset + noise
+        self.true_offset_idx = np.random.randint(0, self.offset_size)
+        self.true_offset = 2 * np.pi * (self.true_offset_idx / self.offset_size)
+
+        # Apply offset + AWGN manually
+        rx_signal = self.apply_phase_offset_and_noise(dpsk_signal, self.true_offset, self.snr_dB)
+
+        # Store
+        self.signalTx = signalTx
+        self.dpsk_signal = dpsk_signal
+        self.rx_signal = rx_signal
+
+        # Return an observation (the real+imag as a tensor),
+        # though we won't necessarily use it for discrete Q-learning
+        obs = self._make_observation(rx_signal)
+        return obs
+
+    def step(self, action):
+        """
+        Single-step:
+          - Convert action => offset
+          - Pass (rx_signal, offset) into the feed-forward net
+          - "Decode" => measure bit errors => reward
+          - Episode ends
+        """
+        if self.done:
+            raise ValueError("Episode already ended. Call reset() first.")
+
+        guessed_offset = 2 * np.pi * (action / self.offset_size)
+
+        # Feed to FF net
+        rx_real_imag = self._make_observation(self.rx_signal)  # shape [2*num_bits]
+        offset_tensor = torch.FloatTensor([guessed_offset]).unsqueeze(0)
+
+        net_in = rx_real_imag.unsqueeze(0)
+        net_out = self.ff_net(net_in, offset_tensor)  # shape [1, num_bits]
+        net_out_np = net_out.detach().numpy().squeeze()
+
+        # We'll do a trivial "decode" of net_out => bits
+        signalEstimate = (net_out_np > 0.5).astype(np.int32)
+
+        # Count errors
+        errors = np.bitwise_xor(self.signalTx, signalEstimate).sum()
+        errors = int(errors)
+        reward = -errors  # negative of errors
+
+        self.done = True
+        info = {
+            "errors": errors,
+            "BER": errors / self.num_bits,
+            "true_offset_idx": self.true_offset_idx
+        }
+
+        return None, reward, self.done, info
+
+    def apply_phase_offset_and_noise(self, dpsk_signal, offset, snr_dB):
+        """Helper: multiply by e^{j*offset} and add AWGN."""
+        rx_signal = dpsk_signal * np.exp(1j * offset)
+        snr_linear = 10 ** (snr_dB / 10)
+        power = np.mean(np.abs(dpsk_signal)**2)
+        noise_power = power / snr_linear
+        noise_std = np.sqrt(noise_power / 2)
+        noise = noise_std * (np.random.randn(*dpsk_signal.shape) 
+                             + 1j * np.random.randn(*dpsk_signal.shape))
+        rx_signal += noise
+        return rx_signal
+
+    def _make_observation(self, rx_signal):
+        """Convert complex array => real+imag -> torch float tensor."""
+        rx_real = rx_signal.real.astype(np.float32)
+        rx_imag = rx_signal.imag.astype(np.float32)
+        return torch.from_numpy(np.concatenate([rx_real, rx_imag], axis=0))
+
+###############################################################################
+# 2) Q-Network and Q-Learning
+###############################################################################
+
+class QNetwork(nn.Module):
     """
-    Add AWGN noise to the transmit symbols according to SNR in dB.
-    tx_symbols: complex array of shape [num_symbols].
-    snr_db: float, signal-to-noise ratio in dB
-    Returns noisy Rx symbols (complex).
+    Minimal Q-network for discrete action selection with a *dummy* state.
+    If you truly want to incorporate the environment's real+imag
+    as input, you'd need a different approach (like DQN for continuous states).
     """
-    # Calculate symbol power
-    power = np.mean(np.abs(tx_symbols)**2)
-    # Convert SNR from dB to linear
-    snr_linear = 10**(snr_db/10)
-    # Noise power based on SNR
-    noise_power = power / snr_linear
-    # Generate Gaussian noise (real + j*imag)
-    noise = np.sqrt(noise_power/2) * (np.random.randn(*tx_symbols.shape) + 
-                                      1j*np.random.randn(*tx_symbols.shape))
-    return tx_symbols + noise
+    def __init__(self, state_size, action_size):
+        super(QNetwork, self).__init__()
+        self.fc1 = nn.Linear(state_size, 32)
+        self.fc2 = nn.Linear(32, action_size)
 
-def compute_ber(true_symbols, detected_symbols):
-    """
-    Compute bit error rate (BER) between true_symbols and detected_symbols.
-    Both are arrays of shape [num_symbols], each in {0,1,2,3}.
-    We'll interpret each symbol as 2 bits. 
-    """
-    # Convert each symbol in {0,1,2,3} to 2-bit binary
-    # Example: 0 => 00, 1 => 01, 2 => 10, 3 => 11
-    def symbol_to_bits(sym):
-        # sym is an int in [0..3]
-        b1 = (sym >> 1) & 1
-        b0 = sym & 1
-        return (b1, b0)
-
-    # Flatten bits
-    true_bits = []
-    detected_bits = []
-    for tsym, rsym in zip(true_symbols, detected_symbols):
-        tb = symbol_to_bits(tsym)
-        rb = symbol_to_bits(rsym)
-        true_bits.extend(tb)
-        detected_bits.extend(rb)
-
-    true_bits = np.array(true_bits)
-    detected_bits = np.array(detected_bits)
-    bit_errors = np.sum(true_bits != detected_bits)
-    total_bits = len(true_bits)
-    ber = bit_errors / total_bits
-    return ber
+    def forward(self, x):
+        # x shape: [batch_size, state_size]
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)  # shape [batch_size, action_size]
+        return x
 
 def one_hot_encode(idx, size):
-    """
-    One-hot encode an integer 'idx' in [0..size-1].
-    Returns a 1D torch tensor of length 'size'.
-    """
+    """Convert integer 'idx' to a 1D one-hot vector of length 'size'."""
     vec = torch.zeros(size)
     vec[idx] = 1.0
     return vec
 
-################################################################################
-# 2. Environment Definition
-################################################################################
-
-class CommEnv:
+def train_qlearning(env, q_net, optimizer, num_episodes=500, epsilon=0.3, gamma=0.0, print_every=50):
     """
-    A toy environment modeling QPSK transmission over an AWGN channel 
-    with an unknown discrete phase offset. The agent tries to guess 
-    the correct offset to minimize BER.
-    
-    - We define a discrete set of possible offsets in {0,1,...,7}.
-      That means the actual offset is offset_index * (2*pi/8).
-    - The environment's state is the "true offset index" (exposed 
-      artificially for demonstration).
-    - The agent picks an action in the same discrete set {0,...,7} 
-      as the guessed offset correction.
-    - The reward is 1 - BER. (Higher = better.)
-    - Single-step episode: once you pick an action, we compute BER 
-      and end the episode.
+    Single-step Q-learning loop:
+      - We'll treat the 'state' as a simple integer (always 0).
+      - We pick action with epsilon-greedy from q_net.
+      - We step once => reward => done.
+      - Q(s,a)=reward for the terminal state.
     """
-    def __init__(self, num_symbols=48, snr_db=10.0):
-        self.num_symbols = num_symbols
-        self.snr_db = snr_db
-        
-        # We'll define 8 possible offset indexes (0..7)
-        # each offset = offset_index * 2π/8
-        self.offset_size = 8
-        
-        self.action_space = list(range(self.offset_size))  # 0..7
-        self.state_size = self.offset_size                # 8 possible states
-        self.reset()
+    state_size = 1  # we have only one dummy state "0"
+    action_size = len(env.action_space)
 
-    def reset(self):
-        """
-        - Generate new random data in [0..3].
-        - Pick a random true offset index.
-        - QPSK-modulate + AWGN.
-        - State is the integer offset index (in a real system we wouldn't know this, 
-          but this is a toy example).
-        Returns state (int).
-        """
-        self.data = np.random.randint(0, 4, size=(self.num_symbols,))
-        self.true_offset_idx = np.random.randint(0, self.offset_size)
-        true_offset = 2*np.pi * (self.true_offset_idx / self.offset_size)
-        
-        # Modulate
-        tx_symbols = qpsk_modulate(self.data, phase_offset=true_offset)
-        # Add noise
-        self.rx_symbols = add_awgn(tx_symbols, snr_db=self.snr_db)
-        
-        self.done = False
-        
-        # The environment's "observation" is the index of the offset, 
-        # just for demonstration
-        return self.true_offset_idx
-
-    def step(self, action):
-        """
-        action: integer in [0..7], the guessed offset index.
-        
-        - We demodulate with the guessed offset.
-        - Compute BER.
-        - Reward = 1 - BER.
-        - Episode done = True (single step).
-        """
-        if self.done:
-            raise ValueError("Episode has finished. Call reset() before step().")
-        
-        guessed_offset = 2*np.pi * (action / self.offset_size)
-        
-        # Demodulate with the guessed offset
-        detected = qpsk_demodulate(self.rx_symbols, guessed_offset)
-        self.ber = compute_ber(self.data, detected)
-        reward = 1.0 - self.ber
-        
-        self.done = True
-        
-        # For a single-step scenario, the next state is meaningless. 
-        # Typically we might set it to None or zero. 
-        # We'll just keep returning the same offset index for demonstration.
-        next_state = self.true_offset_idx
-        
-        return next_state, reward, self.done
-
-################################################################################
-# 3. Q-Network
-################################################################################
-
-class QNetwork(nn.Module):
-    """
-    A simple feed-forward network for discrete Q-values.
-    Input dimension = number of states (8).
-    Output dimension = number of actions (8).
-    """
-    def __init__(self, state_size, action_size):
-        super(QNetwork, self).__init__()
-        self.model = nn.Sequential(
-            nn.Linear(state_size, 64),
-            nn.ReLU(),
-            nn.Linear(64, 64),
-            nn.ReLU(),
-            nn.Linear(64, action_size)
-        )
-
-    def forward(self, x):
-        return self.model(x)
-
-################################################################################
-# 4. Training Loop (Q-learning)
-################################################################################
-
-def train_agent(
-    env,
-    q_net,
-    optimizer,
-    num_episodes=2000,
-    gamma=0.9,
-    epsilon=0.3,
-    print_every=200
-):
-    """
-    Standard Q-learning training loop for the single-step environment.
-    """
-    
     for episode in range(num_episodes):
-        # Reset environment
-        state = env.reset()
-        
-        # Convert state to one-hot
-        state_tensor = one_hot_encode(state, env.state_size)
-        
-        # Epsilon-greedy action selection
+        # 1) Reset environment
+        env.reset()
+        state_idx = 0  
+        state_vec = one_hot_encode(state_idx, state_size).unsqueeze(0)  # shape [1,1]
+
+        # 2) Epsilon-greedy
         if random.random() < epsilon:
             action = random.choice(env.action_space)
         else:
             with torch.no_grad():
-                q_values = q_net(state_tensor)
-                action = torch.argmax(q_values).item()
-        
-        # Take a step
-        next_state, reward, done = env.step(action)
-        
-        # Convert next_state to one-hot
-        # (Though in single-step, we won't do multiple steps)
-        next_state_tensor = one_hot_encode(next_state, env.state_size)
-        
-        # Compute the target
-        with torch.no_grad():
-            # For single-step, it's basically reward if done
-            next_q_values = q_net(next_state_tensor)
-            max_next_q = torch.max(next_q_values).item()
-            target = reward + (0 if done else gamma * max_next_q)
-        
-        # Current Q
-        q_values = q_net(state_tensor)
+                q_values = q_net(state_vec)
+            action = torch.argmax(q_values, dim=1).item()
+
+        # 3) Step
+        _, reward, done, info = env.step(action)
+
+        # single-step => done=True => target=reward
+        target = reward
+
+        # current Q
+        q_values = q_net(state_vec)[0]  
         q_val_action = q_values[action]
-        
-        # TD-loss
         loss = (q_val_action - target)**2
-        
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
-        # Optionally print
+
+        # Print progress
         if (episode+1) % print_every == 0:
-            print(f"[Episode {episode+1}] State={state}, Action={action}, "
-                  f"Reward={reward:.4f}, Loss={loss.item():.6f}, BER = {env.ber}")
+            errors = info["errors"]
+            ber = info["BER"]
+            print(f"Ep {episode+1} | Action={action} | Reward={reward} "
+                  f"| Errors={errors} | BER={ber:.4f} | Loss={loss.item():.4f}")
 
     print("Training complete.")
 
-################################################################################
-# 5. Main Execution
-################################################################################
+###############################################################################
+# 3) Main Script
+###############################################################################
 
 if __name__ == "__main__":
-    # Create environment
-    env = CommEnv(num_symbols=48, snr_db=10.0)
-    
-    # Create Q-network and optimizer
-    q_net = QNetwork(state_size=env.state_size, action_size=len(env.action_space))
-    optimizer = optim.Adam(q_net.parameters(), lr=0.001)
-    
-    # Train
-    train_agent(env, q_net, optimizer, 
-                num_episodes=2000, 
-                gamma=0.9, 
-                epsilon=0.3,
-                print_every=200)
-    
-    # You could now test the trained agent or save the model.
+    # 1) Create environment
+    env = DPSKPhaseOffsetEnv(
+        numSC=48,
+        N=0,
+        snr_dB=10.0,
+        offset_size=8
+    )
+
+    # 2) Create Q-network
+    #    state_size=1 (dummy), action_size=8
+    q_net = QNetwork(state_size=1, action_size=len(env.action_space))
+
+    # 3) Optimizer
+    optimizer = optim.Adam(q_net.parameters(), lr=1e-3)
+
+    # 4) Train
+    train_qlearning(env, q_net, optimizer,
+                    num_episodes=10000,
+                    epsilon=0.9,
+                    gamma=0.5,
+                    print_every=100)

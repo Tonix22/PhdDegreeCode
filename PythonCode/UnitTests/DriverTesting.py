@@ -38,6 +38,9 @@ class ChannelTesting(unittest.TestCase):
     def test_driverSequence(self):
         
         #Encode picture
+        image_path = self.image_paths[idx]
+        target = Image.open(image_path).convert('RGB')
+        
         picture_encoder = PictureEncoder(self.image_path, self.height, self.width, self.channels)  # Initialize with image path and dimensions
         encoded_bytes = picture_encoder.encode()  # Encode the image to a byte sequence
 
@@ -67,8 +70,8 @@ class ChannelTesting(unittest.TestCase):
         decoded_output = databitDecode.flatten_frames_in_bytes()
         #Decode picture
         decoder = PictureDecoder(decoded_output)  # Initialize with encoded byte sequence and dimensions
-        recovered_image = decoder.hint_decode(self.height, self.width, self.channels)  # Decode the image back to its original form
-        recovered_image.save(os.getcwd()+'/dory-ChannelRebuild.jpg')
+        input_image = decoder.hint_decode(self.height, self.width, self.channels)  # Decode the image back to its original form
+        #input_image.save(os.getcwd()+'/dory-ChannelRebuild.jpg')
         self.image.close()
         
     

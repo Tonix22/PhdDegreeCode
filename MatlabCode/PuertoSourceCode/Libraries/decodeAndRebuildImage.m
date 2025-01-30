@@ -1,11 +1,15 @@
-function rebuiltImage = decodeAndRebuildImage(symbols, M, numSC, imagePath)
+function rebuiltImage = decodeAndRebuildImage(symbols, M, numSC, image)
     % symbols: Encoded symbols
     % M: Number of levels for decoding (related to log2(M) bits)
     % numSC: Number of blocks of log2(M) bits
     % imagePath: Path to the image (to retrieve original dimensions)
 
     % Read the image to get the original size
-    img = imread(imagePath);
+    if ischar(image) || isstring(image)
+        img = imread(image);
+    else
+        img = image;
+    end
     imageSize = size(img);
 
     % Calculate the number of bits per symbol

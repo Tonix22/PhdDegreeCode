@@ -24,14 +24,14 @@ from ImageChunksDataSet import ImageChunksDataset
 from PhaseNetDpsk import PhaseNet
 
 # Define hyperparameters (should match those used during training)
-INPUT_SIZE = 48
-HIDDEN_SIZE = 96
+INPUT_SIZE = 64
+HIDDEN_SIZE = 128
 LEARNING_RATE = 1e-3
 CONSTELLATION_SIZE = 4
 IMAGE_PATH = '/home/tonix/Documents/PhdDegreeCode/Data/Picture/Cascade.jpeg'  # Replace with your test image path
 
 # Path to the saved checkpoint
-CHECKPOINT_PATH = '/home/tonix/Documents/PhdDegreeCode/PythonCode/DeepLearning/tb_logs/PhaseNet/version_68/checkpoints/epoch=4-step=7930.ckpt'  # Adjust as necessary
+CHECKPOINT_PATH = '/home/tonix/Documents/PhdDegreeCode/PythonCode/DeepLearning/tb_logs/PhaseNet/version_2/checkpoints/epoch=59-step=285480.ckpt'  # Adjust as necessary
 
 def main():
     # Initialize the model (parameters must match those used during training)
@@ -63,10 +63,10 @@ def main():
 
     # Initialize and run the simulation
     ofdm_system = DPSK_OFDM(
-        snr_dB_range=[15, 25, 30, 35, 40, 45],
+        snr_dB_range=[10, 15, 20, 25, 30],
         modulation_order=4,
-        fft_size=48,
-        num_subcarriers=48,
+        fft_size=64,
+        num_subcarriers=64,
         channel_snr=30,
         los=True
     )
@@ -75,12 +75,12 @@ def main():
         image_path=IMAGE_PATH,
         constelation_size=4,
         style='DPSK',
-        channel_snr=30,
+        channel_snr=20,
         los=True
     )
     
-    #ofdm_system.run_simulation(txbits = dataset.databit_encode.frames, network = model,filename="ber_snr_data_NN.csv")
-    ofdm_system.run_simulation(filename="ber_snr_data_clean.csv")
+    ofdm_system.run_simulation(network = model,filename="ber_snr_DPSK_NN.csv")
+    #ofdm_system.run_simulation(filename="ber_snr_DPSK_No_NN.csv")
 
 if __name__ == '__main__':
     main()

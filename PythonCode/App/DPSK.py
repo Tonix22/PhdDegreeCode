@@ -6,6 +6,7 @@ import sys
 import matlab.engine
 from tqdm import tqdm
 import torch
+import PolarPlot
 
 # Add sys.path for accessing the required modules
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Drivers'))
@@ -62,9 +63,11 @@ class DPSK_OFDM:
         return DPSK_signalTx
 
     
-    def DPSK_channel_and_Noise(self, DPSK_signalTx, G, snr_dB):
-        RxSignal = G @ DPSK_signalTx
-
+    def DPSK_channel_and_Noise(self, DPSK_signalTx, snr_dB, G = None):
+        if G != None:
+            RxSignal = G @ DPSK_signalTx
+        else:
+            RxSignal = DPSK_signalTx
         # Apply OFDM modulation
         OFDM_signalTx = self.utils.ofdm_modulate(RxSignal)
 
@@ -82,18 +85,16 @@ class DPSK_OFDM:
         if(self.network != None):
             device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
             input_tensor = torch.from_numpy(DPSK_signalRx).to(device)
-            phase_tensor = ((torch.angle(input_tensor).float() / torch.pi) + 1)/2
-        
-            norm_factor = torch.max(torch.abs(input_tensor))
-            mag_tensor = (torch.abs(input_tensor)/norm_factor).float()
+            phase_tensor = (torch.angle(input_tensor) / torch.pi)
             
-            mag,phase = self.network(mag_tensor,phase_tensor)
-            equalizer = torch.polar(mag*norm_factor, ((phase*2)-1)*torch.pi)
-            DPSK_signalRx = equalizer.detach().cpu().numpy()
-        
+            phase = self.network(phase_tensor.reshape(1, *phase_tensor.shape).float())
+            deNormalizedPhase = (torch.squeeze(phase))*torch.pi
+            
+            z_fixed = torch.cos(deNormalizedPhase) + 1j * torch.sin(deNormalizedPhase)
+            DPSK_signalRx = z_fixed.detach().cpu()
         # PSK demodulation
         signalEstimate = self.constellation_coder.Decode(DPSK_signalRx) 
-        return signalEstimate
+        return DPSK_signalRx,signalEstimate
         
 
     def transmit_and_receive(self, snr_dB):
@@ -109,17 +110,22 @@ class DPSK_OFDM:
             signalTx = np.random.randint(0, 2, self.numSC*2)
         else:
             signalTx = self.txbits[self.idx, :]
+            
             self.idx += 1
             if(self.txbits.shape[0] < self.idx):
                 self.idx = 0
 
+        signalTx[0] = 0
+        signalTx[1] = 0
         DPSK_signalTx = self.DPSK_encoder(signalTx)
         
         # Transmit through the channel
-        G = self.channel.getChannel()
-        signalRx = self.DPSK_channel_and_Noise(DPSK_signalTx, G, snr_dB)
+        #G = self.channel.getChannel()
+        signalRx = self.DPSK_channel_and_Noise(DPSK_signalTx, snr_dB)
 
-        signalEstimate = self.DPSK_decoder(signalRx)
+        DPSK_signalRx, signalEstimate = self.DPSK_decoder(signalRx)
+        #PolarPlot.plot_two_polar_arrays(DPSK_signalTx, signalRx, start=0, end=5)
+        P#olarPlot.plot_two_polar_arrays(signalRx, DPSK_signalRx, start=0, end=5)
 
         return signalTx, signalEstimate
 
