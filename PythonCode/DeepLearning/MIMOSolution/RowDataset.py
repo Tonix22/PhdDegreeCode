@@ -20,11 +20,19 @@ class RowDataset(Dataset):
         row = self.data[realization_idx, :, row_idx]  # Extract the row (shape: [64])
         label = self.targets[realization_idx, row_idx]  # Extract the corresponding target element
         
-        row = (((row/torch.pi)+1)/2).unsqueeze(0)
+        row = row.unsqueeze(0)
         
         return row, label  # row: (64,), label: scalar
 
 """
+basePath = "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/MIMODataSet/"
+# Load dataset
+data = np.load(basePath+"Signal_SNR_Rx_30.npy")  # Shape: (num_samples, num_rows, num_cols)
+targets = np.load(basePath+"Signal_SNR_Tx_30.npy")  # Shape: (num_samples, labels)
+
+# Convert to PyTorch tensors
+data_tensor = torch.tensor(data, dtype=torch.float32)  # Shape: (num_samples, num_rows, num_cols)
+target_tensor = torch.tensor(targets, dtype=torch.long)  # Shape: (num_samples, labels)
 # Create dataset and DataLoader
 dataset = RowDataset(data_tensor, target_tensor)
 batch_size = 30
@@ -58,3 +66,4 @@ for batch_idx, (inputs, labels) in enumerate(dataloader):
     break  # Stop after one batch
 
 """
+

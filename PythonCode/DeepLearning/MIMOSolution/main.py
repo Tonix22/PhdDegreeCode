@@ -4,15 +4,16 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import Dataset, DataLoader, random_split
 from RowDataset import *
 
-EPOCHS = 5
-BATCHSIZE = 512
-LEARNINGRATE = 1e-4
+EPOCHS = 1
+BATCHSIZE = 256
+LEARNINGRATE = 1e-3
 TRAINPERCENT = 0.7
+SNR = 35
 
 basePath = "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/MIMODataSet/"
 # Load dataset
-data = np.load(basePath+"Signal_SNR_Rx_10.npy")  # Shape: (num_samples, num_rows, num_cols)
-targets = np.load(basePath+"Signal_SNR_Tx_10.npy")  # Shape: (num_samples, labels)
+data = np.load(basePath+f"Signal_SNR_Rx_{SNR}.npy")  # Shape: (num_samples, num_rows, num_cols)
+targets = np.load(basePath+f"Signal_SNR_Tx_{SNR}.npy")  # Shape: (num_samples, labels)
 
 # Convert to PyTorch tensors
 data_tensor = torch.tensor(data, dtype=torch.float32)  # Shape: (num_samples, num_rows, num_cols)
@@ -22,7 +23,7 @@ target_tensor = torch.tensor(targets, dtype=torch.long)  # Shape: (num_samples, 
 model = LitModel(lr = LEARNINGRATE)
 
 # Init logger
-logger = TensorBoardLogger("lightning_logs", name="my_experiment")
+logger = TensorBoardLogger("lightning_logs", name=f"MIMO_{SNR}_Epochs_{EPOCHS}_BS{BATCHSIZE}_LR{LEARNINGRATE}")
 
 # Trainner Config
 trainer = Trainer(
@@ -45,3 +46,6 @@ val_loader = DataLoader(val_dataset, batch_size=BATCHSIZE,num_workers=16, shuffl
 
 # Ejecutar el entrenamiento
 trainer.fit(model, train_loader, val_loader)
+
+torch.save(model.state_dict(), f"model_MIMO_DPSK_{SNR}.pth")
+print(f"model_MIMO_DPSK_{SNR}.pth")

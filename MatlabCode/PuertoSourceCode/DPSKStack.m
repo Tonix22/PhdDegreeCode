@@ -8,7 +8,7 @@ FFTSize = 64;            % FFT size for OFDM
 k = log2(M);             % Bits per symbol (log base 2 of modulation order)
 numSC = 64;              % Number of subcarriers
 numBitSymbol = numSC * k; % Total number of bits per OFDM symbol
-samplesPerSNR = 10000;
+samplesPerSNR = 5000;
 
 
 for SNR_dB = SNR_dB_Range
@@ -21,10 +21,10 @@ for SNR_dB = SNR_dB_Range
         Tx(s,:) = signalTx;
         %% Stack Generation procedure
         for i = 1:FFTSize
-            [~,DPSKsignalRx]= processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC);
-            mimoSignal(s,i,:) = angle(DPSKsignalRx);
+            [~,DPSKsignalRx]= processChannelAndTransmit(signalTx, M, FFTSize, 35, numSC);
+            mimoSignal(s,i,:) = (angle(DPSKsignalRx)/(2*pi)+1)/2;
         end
-
+        %{
         figure;
         imagesc(squeeze(mimoSignal(s,:,:))); % Display the phase as an image
         colormap('jet'); % Use a colormap for better visualization
@@ -34,27 +34,17 @@ for SNR_dB = SNR_dB_Range
         ylabel('Rows');
         saveas(gcf, 'phase_plot.png');
         return;
+        %}
         
     end
 
     %% Save mimoSignal using Python inside MATLAB
     filename = sprintf("MIMODataSet/Signal_SNR_Rx_%d.npy", SNR_dB);
     py.numpy.save(filename , py.numpy.array(mimoSignal))
+    disp(['Saved ' filename ' successfully.']);
 
     filename = sprintf("MIMODataSet/Signal_SNR_Tx_%d.npy", SNR_dB);
     py.numpy.save(filename , py.numpy.array(Tx))
     disp(['Saved ' filename ' successfully.']);
 
 end
-
-
-
-% Plot the phase as an image
-%figure;
-%imagesc(mimoSignal); % Display the phase as an image
-%colormap('jet'); % Use a colormap for better visualization
-%colorbar; % Show the color scale
-%title('Phase of the Complex Signal');
-%xlabel('Columns');
-%ylabel('Rows');
-%saveas(gcf, 'phase_plot.png');
