@@ -16,3 +16,8 @@ Documents/Thesis/ProblemJustification.bbl
 Documents/Thesis/ProblemJustification.blg
 Documents/Thesis/ProblemJustification.log
 *.JPEG
+*yaml
+*.ckpt
+*/tb_logs/*
+PythonCode/DeepLearning/MIMOSolution/lightning_logs/*
+PythonCode/DeepLearning/Qlearning/tb_logs/*

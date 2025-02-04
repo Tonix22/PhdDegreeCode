@@ -125,7 +125,7 @@ class DPSK_OFDM:
 
         DPSK_signalRx, signalEstimate = self.DPSK_decoder(signalRx)
         #PolarPlot.plot_two_polar_arrays(DPSK_signalTx, signalRx, start=0, end=5)
-        P#olarPlot.plot_two_polar_arrays(signalRx, DPSK_signalRx, start=0, end=5)
+        #PolarPlot.plot_two_polar_arrays(signalRx, DPSK_signalRx, start=0, end=5)
 
         return signalTx, signalEstimate
 

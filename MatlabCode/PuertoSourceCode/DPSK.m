@@ -22,7 +22,7 @@ for i = 1:length(SNR_dB)
         % Generate random data symbols
         signalTx = generateRandomData(M, numSC);
         % Transmit and receive the signal through the channel
-        [signalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB(i), numSC);
+        [signalEstimate, ~] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB(i), numSC);
         
         % Calculate bit errors
         numErrorCalculate = biterr(signalTx, signalEstimate);  

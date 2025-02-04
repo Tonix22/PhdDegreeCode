@@ -1,4 +1,4 @@
-function [signalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC)    
+function [signalEstimate,DPSKsignalRx] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC)    
     % Modulate data with PSK
     pskSignal = applyPSKModulation(signalTx, M);
 
