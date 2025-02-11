@@ -4,10 +4,10 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import Dataset, DataLoader, random_split
 from RowDataset import *
 
-EPOCHS = 1
+EPOCHS = 20
 BATCHSIZE = 256
 LEARNINGRATE = 1e-3
-TRAINPERCENT = 0.7
+TRAINPERCENT = 0.8
 SNR = 35
 
 basePath = "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/MIMODataSet/"

@@ -36,8 +36,8 @@ def plot_csv_files(csv_files, output_filename="output_plot.png"):
             print(f"Error reading {file}: {e}")
     
     plt.title("Combined Plot of CSV Data")
-    plt.xlabel("X-axis")
-    plt.ylabel("Y-axis")
+    plt.xlabel("BER")
+    plt.ylabel("SNR dB")
     plt.legend()
     plt.grid(True)
 
@@ -48,6 +48,8 @@ def plot_csv_files(csv_files, output_filename="output_plot.png"):
 
 # Example usage
 
-csv_files = ["ber_snr_DPSK_No_NN.csv",  "/home/tonix/Documents/PhdDegreeCode/ber_snr_DPSK_NN.csv"]
+csv_files = ["/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_Theorical_BER_AWGN.csv", 
+             "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_NN_V2V.csv",
+             "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_AWGN_V2V_NO_NN.csv"]
 output_filename = "Network vs DPSK.png"
 plot_csv_files(csv_files, output_filename)

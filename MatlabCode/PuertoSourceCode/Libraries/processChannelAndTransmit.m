@@ -1,13 +1,14 @@
-function [signalEstimate,DPSKsignalRx] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC)    
+function [signalEstimate,DPSKsignalRx] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC, varargin)    
     % Modulate data with PSK
     pskSignal = applyPSKModulation(signalTx, M);
 
     % Differential encoding for DPSK
     DPSKsignalTx = applyDPSKEncoding(pskSignal);
 
-    % Process channel
-    %G = processChannel(H);
-    %RxSignal = G * DPSKsignalTx;
+    if length(varargin) == 1
+        G = processChannel(varargin{1});  % Assign channel
+        DPSKsignalTx = G * DPSKsignalTx;
+    end
 
     % OFDM modulation
     OFDMsignalTx = ofdmModulate(DPSKsignalTx, FFTSize);

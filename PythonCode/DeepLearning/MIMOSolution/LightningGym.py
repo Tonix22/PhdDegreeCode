@@ -2,14 +2,15 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from MIMONet import MIMONet
+from MIMOTransformer import MIMOTransformer
+from MIMONetV2 import MIMONetV2
 
 # Luego definimos la clase LightningModule que envuelve la red
 class LitModel(pl.LightningModule):
     def __init__(self, lr=1e-3):
         super(LitModel, self).__init__()
         self.save_hyperparameters()  # guarda hyperparams en checkpoints, etc.
-        self.model = MIMONet()
+        self.model = MIMONetV2()
         self.lr = lr
         # Podríamos usar cross entropy
         self.criterion = nn.CrossEntropyLoss()
@@ -25,7 +26,7 @@ class LitModel(pl.LightningModule):
         self.log("train_loss", loss, prog_bar=True)
         
         acc = (preds.argmax(dim=1) == y).float().sum()/y.shape[0]
-        self.log("val_acc", acc, prog_bar=True, on_epoch=False)
+        #self.log("val_acc", acc, prog_bar=True, on_epoch=False)
         return loss
 
     def validation_step(self, batch, batch_idx):

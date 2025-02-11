@@ -8,7 +8,7 @@ FFTSize = 48;            % FFT size for OFDM
 k = log2(M);             % Bits per symbol (log base 2 of modulation order)
 numSC = 48;              % Number of subcarriers
 numBitSymbol = numSC * k; % Total number of bits per OFDM symbol
-%H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
 
 ber = zeros(1, length(SNR_dB)); % Preallocate BER results
 
@@ -22,7 +22,7 @@ for i = 1:length(SNR_dB)
         % Generate random data symbols
         signalTx = generateRandomData(M, numSC);
         % Transmit and receive the signal through the channel
-        [signalEstimate, ~] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB(i), numSC);
+        [signalEstimate, ~] = processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB(i), numSC,H);
         
         % Calculate bit errors
         numErrorCalculate = biterr(signalTx, signalEstimate);  

@@ -2,27 +2,38 @@ close all;
 clc;
 addpath('Libraries');
 %% Parameter System
-SNR_dB_Range = 5:5:35;         % Range of SNR values in dB
+SNR_dB_Range = 10:5:35;         % Range of SNR values in dB
 M = 4;                   % Modulation order (QPSK)
-FFTSize = 64;            % FFT size for OFDM
+FFTSize = 48;            % FFT size for OFDM
+Retransmitions = 3;      % Number of retransmision
 k = log2(M);             % Bits per symbol (log base 2 of modulation order)
-numSC = 64;              % Number of subcarriers
+numSC = 48;              % Number of subcarriers
 numBitSymbol = numSC * k; % Total number of bits per OFDM symbol
-samplesPerSNR = 5000;
-
+samplesPerSNR = 10000;
+H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
 
 for SNR_dB = SNR_dB_Range
 
-    mimoSignal = zeros(samplesPerSNR,FFTSize,FFTSize);
+    mimoSignal = zeros(samplesPerSNR,Retransmitions+1,FFTSize);
     Tx         = zeros(samplesPerSNR, numSC);
 
     for s = 1:samplesPerSNR
         signalTx = generateRandomData(M, numSC);
         Tx(s,:) = signalTx;
         %% Stack Generation procedure
+        for i = 1:Retransmitions
+            [~,DPSKsignalRx]= processChannelAndTransmit(signalTx, M, FFTSize, SNR_dB, numSC,H);
+            mimoSignal(s,i,:) = DPSKsignalRx;
+        end
+
         for i = 1:FFTSize
-            [~,DPSKsignalRx]= processChannelAndTransmit(signalTx, M, FFTSize, 35, numSC);
-            mimoSignal(s,i,:) = (angle(DPSKsignalRx)/(2*pi)+1)/2;
+            % Extract the complex symbols for all retransmissions
+            symbols = mimoSignal(s,1:Retransmitions,i);  % Complex numbers
+            % Compute the Circular Mean (Mean Angle)
+            mean_angle = angle(mean(exp(1j * angle(symbols))));  % Mean of unit vectors
+            mimoSignal(s,1:Retransmitions,i) = angle(symbols);
+            mimoSignal(s,end,i) = mean_angle;
+            mimoSignal(s,:,i) = (mimoSignal(s,:,i) + pi) / (2 * pi);
         end
         %{
         figure;
@@ -35,7 +46,6 @@ for SNR_dB = SNR_dB_Range
         saveas(gcf, 'phase_plot.png');
         return;
         %}
-        
     end
 
     %% Save mimoSignal using Python inside MATLAB
