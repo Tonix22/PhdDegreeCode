@@ -9,7 +9,7 @@ Retransmitions = 3;      % Number of retransmision
 k = log2(M);             % Bits per symbol (log base 2 of modulation order)
 numSC = 48;              % Number of subcarriers
 numBitSymbol = numSC * k; % Total number of bits per OFDM symbol
-samplesPerSNR = 10000;
+samplesPerSNR = 5000;
 H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
 
 for SNR_dB = SNR_dB_Range
@@ -49,11 +49,11 @@ for SNR_dB = SNR_dB_Range
     end
 
     %% Save mimoSignal using Python inside MATLAB
-    filename = sprintf("MIMODataSet/Signal_SNR_Rx_%d.npy", SNR_dB);
+    filename = sprintf("OsvaldoTempDataSet/Signal_SNR_Rx_%d.npy", SNR_dB);
     py.numpy.save(filename , py.numpy.array(mimoSignal))
     disp(['Saved ' filename ' successfully.']);
 
-    filename = sprintf("MIMODataSet/Signal_SNR_Tx_%d.npy", SNR_dB);
+    filename = sprintf("OsvaldoTempDataSet/Signal_SNR_Tx_%d.npy", SNR_dB);
     py.numpy.save(filename , py.numpy.array(Tx))
     disp(['Saved ' filename ' successfully.']);
 
