@@ -1,0 +1,8 @@
+{
+    "csv_files": [
+        "../../MatlabCode/MIMO/DPSK_SNR_MIMONET.csv",
+        "../../MatlabCode/MIMO/DPSK_SNR_MIMONET_RESNET50.csv",
+        "../../MatlabCode/MIMO/DPSK_SNR.csv"
+    ],
+    "output_filename": "Network_vs_DPSK.png"
+}

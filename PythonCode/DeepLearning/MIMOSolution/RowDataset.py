@@ -25,7 +25,7 @@ class RowDataset(Dataset):
         return row, label  # row: (64,), label: scalar
 
 """
-basePath = "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/MIMODataSet/"
+basePath = "/home/tonix/Documents/PhdDegreeCode/MatlabCode/MIMODataSet/"
 # Load dataset
 data = np.load(basePath+"Signal_SNR_Rx_30.npy")  # Shape: (num_samples, num_rows, num_cols)
 targets = np.load(basePath+"Signal_SNR_Tx_30.npy")  # Shape: (num_samples, labels)

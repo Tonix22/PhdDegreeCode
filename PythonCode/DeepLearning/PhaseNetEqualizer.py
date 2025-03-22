@@ -37,3 +37,20 @@ class PhaseEqualizer(nn.Module):
     def forward(self, phase):
         # Subtract the network's output from the input to model phase correction
         return  self.phase_noise_estimate(phase)
+    
+#"""
+# Crear un modelo de ejemplo
+input_size = 128  # Puedes cambiarlo según tu caso
+hidden_size = 256
+num_layers = 5
+model = PhaseEqualizer(input_size, hidden_size, num_layers)
+
+# Crear una entrada de prueba
+dummy_input = torch.randn(1, input_size)
+
+# Guardar el modelo en formato ONNX
+onnx_path = "phase_equalizer.onnx"
+torch.onnx.export(model, dummy_input, onnx_path, input_names=["input"], output_names=["output"], opset_version=11)
+
+print(f"Modelo guardado en {onnx_path}")
+#"""

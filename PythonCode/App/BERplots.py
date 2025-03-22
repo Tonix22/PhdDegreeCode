@@ -1,9 +1,14 @@
+import json
+import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-
-# Add sys.path for accessing the required modules
+def load_config(json_path):
+    """Load configuration from JSON file."""
+    with open(json_path, 'r') as file:
+        config = json.load(file)
+    return config
 
 def plot_csv_files(csv_files, output_filename="output_plot.png"):
     """
@@ -15,13 +20,17 @@ def plot_csv_files(csv_files, output_filename="output_plot.png"):
         output_filename (str): The output file name for the plot (default: 'output_plot.png').
     """
     # Predefined styles and colors for each plot
-    styles = ['-', '--', '-.', ':']  # Different line styles
-    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']  # Different colors
-    
+    styles = ['-', '--', '-.', ':']
+    colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
+
     plt.figure(figsize=(10, 6))
 
     for i, file in enumerate(csv_files):
         try:
+            if not os.path.isfile(file):
+                print(f"Warning: File not found {file}")
+                continue
+            
             # Read the CSV file
             data = pd.read_csv(file)
             
@@ -36,20 +45,32 @@ def plot_csv_files(csv_files, output_filename="output_plot.png"):
             print(f"Error reading {file}: {e}")
     
     plt.title("Combined Plot of CSV Data")
-    plt.xlabel("BER")
-    plt.ylabel("SNR dB")
+    plt.ylabel("BER")
+    plt.xlabel("SNR dB")
     plt.legend()
     plt.grid(True)
 
-    # Save the plot to the current path with the specified output filename
+    # Save the plot
     plt.savefig(output_filename)
     plt.close()
     print(f"Plot saved as {output_filename}")
 
-# Example usage
+def main(json_path):
+    """Main function to load configuration and generate plots."""
+    config = load_config(json_path)
+    
+    csv_files = config.get("csv_files", [])
+    output_filename = config.get("output_filename", "output_plot.png")
 
-csv_files = ["/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_Theorical_BER_AWGN.csv", 
-             "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_NN_V2V.csv",
-             "/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_AWGN_V2V_NO_NN.csv"]
-output_filename = "Network vs DPSK.png"
-plot_csv_files(csv_files, output_filename)
+    if not csv_files:
+        print("Error: No CSV files provided in the JSON configuration.")
+        return
+    
+    plot_csv_files(csv_files, output_filename)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Plot CSV data from a JSON configuration file.")
+    parser.add_argument("config_json", type=str, help="Path to JSON configuration file")
+    args = parser.parse_args()
+
+    main(args.config_json)

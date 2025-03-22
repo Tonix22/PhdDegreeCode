@@ -1,0 +1,48 @@
+digraph FullyConnectedNN {
+    rankdir=LR;  // Orientación izquierda a derecha
+    splines=true;
+    
+    // Definir los nodos de cada capa
+    node [shape=circle, style=filled, fontcolor=white];
+
+    // Entrada
+    node [fillcolor=lightblue];
+    I1 I2 I3 I4;
+
+    // Capa oculta 1
+    node [fillcolor=lightgray];
+    H11 H12 H13 H14;
+
+    // Capa oculta 2
+    node [fillcolor=gray];
+    H21 H22 H23 H24;
+
+    // Salida
+    node [fillcolor=red];
+    O1 O2 O3 O4;
+
+    // Conexiones de entrada a capa oculta 1
+    edge [penwidth=2];
+    I1 -> {H11 H12 H13 H14} [color=blue];
+    I2 -> {H11 H12 H13 H14} [color=green];
+    I3 -> {H11 H12 H13 H14} [color=orange];
+    I4 -> {H11 H12 H13 H14} [color=purple];
+
+    // Conexiones de capa oculta 1 a capa oculta 2
+    H11 -> {H21 H22 H23 H24} [color=blue];
+    H12 -> {H21 H22 H23 H24} [color=green];
+    H13 -> {H21 H22 H23 H24} [color=orange];
+    H14 -> {H21 H22 H23 H24} [color=purple];
+
+    // Conexiones de capa oculta 2 a salida
+    H21 -> {O1 O2 O3 O4} [color=blue];
+    H22 -> {O1 O2 O3 O4} [color=green];
+    H23 -> {O1 O2 O3 O4} [color=orange];
+    H24 -> {O1 O2 O3 O4} [color=purple];
+
+    // Agrupar nodos en niveles
+    {rank=same; I1 I2 I3 I4;}
+    {rank=same; H11 H12 H13 H14;}
+    {rank=same; H21 H22 H23 H24;}
+    {rank=same; O1 O2 O3 O4;}
+}

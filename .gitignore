@@ -21,3 +21,7 @@ Documents/Thesis/ProblemJustification.log
 */tb_logs/*
 PythonCode/DeepLearning/MIMOSolution/lightning_logs/*
 PythonCode/DeepLearning/Qlearning/tb_logs/*
+lightning_logs/*
+*.pth
+Rutines/MIMO/lightning_logs/*
+**/lightning_logs/*

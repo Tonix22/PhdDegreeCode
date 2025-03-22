@@ -1,0 +1,26 @@
+digraph "Sequential Diagram for processChannelAndTransmit" {
+	Start [label=Start shape=oval]
+	PSK [label="applyPSKModulation(signalTx, M)" shape=rectangle]
+	DPSK_Enc [label="applyDPSKEncoding(pskSignal)" shape=rectangle]
+	CheckVarargin [label="length(varargin) == 1?" shape=diamond]
+	ProcessChannel [label="G = processChannel(varargin{1})" shape=rectangle]
+	ApplyG [label="DPSKsignalTx = G * DPSKsignalTx" shape=rectangle]
+	OFDM_Mod [label="ofdmModulate(DPSKsignalTx, FFTSize)" shape=rectangle]
+	AWGN [label="awgn(OFDMsignalTx, SNR_dB)" shape=rectangle]
+	OFDM_Demod [label="ofdmDemodulate(signalRx, FFTSize)" shape=rectangle]
+	DPSK_Dec [label="applyDPSKDecoding(OFDMsignalRx, numSC)" shape=rectangle]
+	PSK_Demod [label="applyPSKDemodulation(DPSKsignalRx, M)" shape=rectangle]
+	End [label=End shape=oval]
+	Start -> PSK
+	PSK -> DPSK_Enc
+	DPSK_Enc -> CheckVarargin
+	CheckVarargin -> ProcessChannel [label=Yes]
+	ProcessChannel -> ApplyG
+	ApplyG -> OFDM_Mod
+	CheckVarargin -> OFDM_Mod [label=No]
+	OFDM_Mod -> AWGN
+	AWGN -> OFDM_Demod
+	OFDM_Demod -> DPSK_Dec
+	DPSK_Dec -> PSK_Demod
+	PSK_Demod -> End
+}

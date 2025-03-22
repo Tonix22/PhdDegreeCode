@@ -1,0 +1,104 @@
+Date : 2025-03-06 22:22:46
+Directory : /home/tonix/Documents/PhdDegreeCode
+Total : 62 files,  1340 codes, 435 comments, 385 blanks, all 2160 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| MATLAB   |         46 |      1,257 |        435 |        369 |      2,061 |
+| CSV      |         16 |         83 |          0 |         16 |         99 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                            | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                               |         62 |      1,340 |        435 |        385 |      2,160 |
+| . (Files)                                                                                                       |          1 |          6 |          0 |          1 |          7 |
+| MatlabCode                                                                                                      |         54 |      1,290 |        435 |        377 |      2,102 |
+| MatlabCode/ComplexNetwork                                                                                       |          2 |         96 |         35 |         39 |        170 |
+| MatlabCode/Lab                                                                                                  |          1 |         59 |         38 |         31 |        128 |
+| MatlabCode/NeuronalNetwork                                                                                      |         12 |        333 |        140 |        107 |        580 |
+| MatlabCode/NeuronalNetwork (Files)                                                                              |          2 |        189 |         55 |         56 |        300 |
+| MatlabCode/NeuronalNetwork/BinaryClassifier                                                                     |          8 |        106 |         42 |         29 |        177 |
+| MatlabCode/NeuronalNetwork/CorrDataGeneration                                                                   |          2 |         38 |         43 |         22 |        103 |
+| MatlabCode/PuertoSourceCode                                                                                     |         39 |        802 |        222 |        200 |      1,224 |
+| MatlabCode/PuertoSourceCode (Files)                                                                             |         14 |        327 |         91 |         80 |        498 |
+| MatlabCode/PuertoSourceCode/Libraries                                                                           |         22 |        472 |        131 |        117 |        720 |
+| MatlabCode/PuertoSourceCode/Results                                                                             |          3 |          3 |          0 |          3 |          6 |
+| PythonCode                                                                                                      |          7 |         44 |          0 |          7 |         51 |
+| PythonCode/App                                                                                                  |          5 |         32 |          0 |          5 |         37 |
+| PythonCode/DeepLearning                                                                                         |          1 |          6 |          0 |          1 |          7 |
+| PythonCode/DeepLearning/Qlearning                                                                               |          1 |          6 |          0 |          1 |          7 |
+| PythonCode/UnitTests                                                                                            |          1 |          6 |          0 |          1 |          7 |
++-----------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                        | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/ComplexNetwork/ComplexAutoencoderFC.m                            | MATLAB   |         48 |          9 |         10 |         67 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/ComplexNetwork/testComplexAutoencoderFC.m                        | MATLAB   |         48 |         26 |         29 |        103 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/Lab/PictureOFDM.m                                                | MATLAB   |         59 |         38 |         31 |        128 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/BinaryNet.m                     | MATLAB   |         14 |          2 |          4 |         20 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/NetworkTest.m                   | MATLAB   |         11 |          5 |          5 |         21 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/accumulateMetrics.m             | MATLAB   |          9 |          4 |          4 |         17 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/evaluateModel.m                 | MATLAB   |         33 |          7 |          6 |         46 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/modelLoss.m                     | MATLAB   |          5 |          0 |          0 |          5 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/splitDlData.m                   | MATLAB   |          8 |         17 |          4 |         29 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/testNetwork.m                   | MATLAB   |          6 |          3 |          2 |         11 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/BinaryClassifier/trainNetworkCustom.m            | MATLAB   |         20 |          4 |          4 |         28 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/CorrDataGeneration/CorrelationGenerators.m       | MATLAB   |         28 |         27 |         17 |         72 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/CorrDataGeneration/computeCorrChannels.m         | MATLAB   |         10 |         16 |          5 |         31 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/DPSKCluster.m                                    | MATLAB   |         85 |         30 |         34 |        149 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/NeuronalNetwork/DPSKCorrelation.m                                | MATLAB   |        104 |         25 |         22 |        151 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK.m                                          | MATLAB   |         26 |          8 |          7 |         41 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSKPcitureDenoiseNormal.m                      | MATLAB   |         11 |          0 |          0 |         11 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSKPicture.m                                   | MATLAB   |         16 |          3 |          3 |         22 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSKStack.m                                     | MATLAB   |         46 |          7 |          7 |         60 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_AWGN_V2V_NO_NN.csv                     | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_NN_V2V.csv                             | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_Theorical.csv                          | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_Theorical_BER_AWGN.csv                 | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DPSK_SNR_V2V_NO_NN.csv                          | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/DenoisePicture.m                                | MATLAB   |         24 |         12 |          8 |         44 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Equalizers.m                                    | MATLAB   |         33 |          4 |          8 |         45 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/LMMSE.m                               | MATLAB   |          2 |          0 |          0 |          2 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/MMSESortedQRC.m                       | MATLAB   |         67 |         39 |         31 |        137 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/Near_ML.m                             | MATLAB   |        120 |         16 |         12 |        148 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/OSIC_Det.m                            | MATLAB   |         10 |          4 |          4 |         18 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/QRM_Det4b.m                           | MATLAB   |        132 |         26 |         19 |        177 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/applyDPSKDecoding.m                   | MATLAB   |          5 |          0 |          1 |          6 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/applyDPSKEncoding.m                   | MATLAB   |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/applyPSKDemodulation.m                | MATLAB   |          3 |          0 |          1 |          4 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/applyPSKModulation.m                  | MATLAB   |          3 |          0 |          1 |          4 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/awgnwraper.m                          | MATLAB   |          3 |          0 |          2 |          5 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/calculateTheoreticalBER.m             | MATLAB   |          4 |          0 |          1 |          5 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/chunkAndEncodeImage.m                 | MATLAB   |         24 |         12 |          8 |         44 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/convertSNRtoEbNo.m                    | MATLAB   |          7 |          2 |          1 |         10 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/decodeAndRebuildImage.m               | MATLAB   |         17 |         10 |          6 |         33 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/generateRandomData.m                  | MATLAB   |          3 |          0 |          1 |          4 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/ofdmDemodulate.m                      | MATLAB   |          3 |          0 |          1 |          4 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/ofdmModulate.m                        | MATLAB   |          3 |          0 |          1 |          4 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/plotBER.m                             | MATLAB   |         16 |          4 |          4 |         24 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/processAndRebuildPicture.m            | MATLAB   |         12 |          4 |          6 |         22 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/processChannel.m                      | MATLAB   |         11 |          3 |          4 |         18 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/processChannelAndTransmit.m           | MATLAB   |         13 |          7 |          8 |         28 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries/saveBERToCSV.m                        | MATLAB   |          8 |          4 |          4 |         16 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/MimoDPSKStackTest.m                             | MATLAB   |         63 |         42 |         17 |        122 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/OFDMspreading_noLinear_Detection.m              | MATLAB   |         68 |         14 |         24 |        106 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Results/BER_Plot_LMMSE_2024-09-26_15-48-48.csv  | CSV      |          1 |          0 |          1 |          2 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Results/BER_Plot_NearML_2024-09-26_15-54-55.csv | CSV      |          1 |          0 |          1 |          2 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Results/BER_Plot_OSIC_2024-09-26_15-49-33.csv   | CSV      |          1 |          0 |          1 |          2 |
+| /home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/TheoricalBER.m                                  | MATLAB   |         10 |          1 |          1 |         12 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/App/DPSK_Stack_SNR.csv                                           | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/App/Theorical.csv                                                | CSV      |          7 |          0 |          1 |          8 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/App/ber_snr_DPSK_AWGN_V2V.csv                                    | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/App/ber_snr_DPSK_NN.csv                                          | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/App/ber_snr_DPSK_NN_V2V.csv                                      | CSV      |          7 |          0 |          1 |          8 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/DeepLearning/Qlearning/ber_snr_DPSK_NN.csv                       | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/PythonCode/UnitTests/ber_snr_data.csv                                       | CSV      |          6 |          0 |          1 |          7 |
+| /home/tonix/Documents/PhdDegreeCode/ber_snr_DPSK_NN.csv                                                         | CSV      |          6 |          0 |          1 |          7 |
+| Total                                                                                                           |          |      1,340 |        435 |        385 |      2,160 |
++-----------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

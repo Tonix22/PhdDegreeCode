@@ -2,8 +2,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from MIMOTransformer import MIMOTransformer
-from MIMONetV2 import MIMONetV2
+from Networks.MIMONetV2 import MIMONetV2
+from Networks.Classical.ResNet50 import ResNet50
 
 # Luego definimos la clase LightningModule que envuelve la red
 class LitModel(pl.LightningModule):
@@ -11,6 +11,7 @@ class LitModel(pl.LightningModule):
         super(LitModel, self).__init__()
         self.save_hyperparameters()  # guarda hyperparams en checkpoints, etc.
         self.model = MIMONetV2()
+        #self.model = ResNet50(in_channels=1,classes=4)
         self.lr = lr
         # Podríamos usar cross entropy
         self.criterion = nn.CrossEntropyLoss()

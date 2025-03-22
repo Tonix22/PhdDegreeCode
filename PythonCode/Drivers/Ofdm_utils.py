@@ -10,7 +10,7 @@ class OFDMUtils:
     def init_matlab_engine(self):
         if self.eng is None:
             self.eng = matlab.engine.start_matlab()
-            self.eng.cd(r'/home/tonix/Documents/PhdDegreeCode/MatlabCode/PuertoSourceCode/Libraries', nargout=0)
+            self.eng.cd(r'/home/tonix/Documents/PhdDegreeCode/MatlabCode/Libraries', nargout=0)
 
     def ofdm_modulate(self, symbols):
         """

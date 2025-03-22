@@ -1,0 +1,13 @@
+{
+    "SNR_dB_Range": [0, 5, 10, 15, 20, 25],
+    "M": 4,
+    "FFTSize": 48,
+    "Retransmissions": 3,
+    "k": 2,
+    "numSC": 48,
+    "numBitSymbol": 96,
+    "samplesPerSNR": 1000,
+    "V2VChannel" : false,
+    "PTHBasePath": "../../Rutines/MIMO/TrainnedModels/",
+    "errorThreshold" : 2000
+}

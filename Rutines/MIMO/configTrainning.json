@@ -1,0 +1,11 @@
+{
+    "EPOCHS": 10,
+    "BATCHSIZE": 256,
+    "LEARNINGRATE": 0.001,
+    "TRAINPERCENT": 0.8,
+    "SNR_RANGE": [0, 5, 10, 15, 20, 25],
+    "DATA_PATH": "../../PythonCode/DeepLearning/MIMOSolution/data/",
+    "MODEL_SAVE_PATH": "TrainnedModels/",
+    "NUM_WORKERS": 16,
+    "USE_GPU": true
+}

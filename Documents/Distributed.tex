@@ -1,0 +1,139 @@
+
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{amssymb}
+
+\begin{document}
+
+\title{Análisis de Comunicación en Redes Neuronales con Proyectores}
+\author{Simulación Matemática}
+\date{\today}
+\maketitle
+
+\section{Introducción}
+
+En este documento analizamos el impacto del uso de proyectores en la cantidad mínima de comunicaciones necesarias en una 
+red neuronal totalmente conectada. Consideramos una red con \( N \) neuronas por capa y \( H \) capas ocultas,
+donde cada capa oculta incorpora dos proyectores: un \textbf{proyector de entrada} y un \textbf{proyector de salida}. 
+El objetivo es encontrar una condición para el factor de reducción \( k \) de los proyectores, que permita minimizar 
+la cantidad total de comunicaciones en la red.
+
+\section{Modelo de Comunicación}
+
+Para entender cómo afectan los proyectores a la comunicación, analizamos dos casos: redes sin proyectores y redes con proyectores.
+
+\subsection{Red Neuronal Sin Proyectores}
+
+En una red neuronal totalmente conectada sin proyectores, cada neurona de una capa se comunica con todas las neuronas de la 
+siguiente capa. Si tenemos \( H \) capas ocultas más la capa de salida, el total de transiciones entre capas es \( (H+1) \).
+
+El número total de comunicaciones se expresa como:
+
+\begin{equation}
+C_{\text{sin proyector}} = N (N-1) (H+1)
+\end{equation}
+
+donde cada una de las \( N \) neuronas de una capa se comunica con \( (N-1) \) neuronas de la siguiente capa.
+
+\subsection{Red Neuronal Con Proyectores}
+
+Si introducimos proyectores en las capas ocultas, cada una de ellas se divide en tres partes:
+\begin{itemize}
+    \item La capa principal con \( N \) neuronas.
+    \item Un proyector de entrada con \( kN \) neuronas, donde \( k \) es el factor de reducción.
+    \item Un proyector de salida con \( kN \) neuronas.
+\end{itemize}
+
+Cada transición entre capas ahora requiere cuatro pasos de comunicación:
+
+\begin{enumerate}
+    \item Capa principal \( \rightarrow \) Proyector de entrada: 
+        \begin{equation} 
+        N \times kN = kN^2 
+        \end{equation}
+    \item Proyector de entrada \( \rightarrow \) Capa siguiente: 
+        \begin{equation} 
+        kN \times N = kN^2 
+        \end{equation}
+    \item Capa principal \( \rightarrow \) Proyector de salida: 
+        \begin{equation} 
+        N \times kN = kN^2 
+        \end{equation}
+    \item Proyector de salida \( \rightarrow \) Capa siguiente: 
+        \begin{equation} 
+        kN \times N = kN^2 
+        \end{equation}
+\end{enumerate}
+
+Cada capa oculta con proyectores requiere:
+
+\begin{equation}
+C_{\text{capa con proyector}} = 4kN^2
+\end{equation}
+
+Como hay \( H \) capas ocultas, la comunicación total en estas capas es:
+
+\begin{equation}
+C_{\text{capas ocultas con proyector}} = 4kN^2 H
+\end{equation}
+
+Finalmente, la comunicación de la última capa oculta a la salida sigue siendo:
+
+\begin{equation}
+C_{\text{salida}} = N(N-1)
+\end{equation}
+
+Por lo que la comunicación total con proyectores es:
+
+\begin{equation}
+C_{\text{con proyector}} = \frac{2N(N-1) + 4kN^2 H}{2}
+\end{equation}
+
+\section{Desigualdad para \( k \)}
+
+Queremos encontrar una condición para \( k \) que garantice que la comunicación con proyectores sea menor que sin proyectores:
+
+\begin{equation}
+C_{\text{con proyector}} < C_{\text{sin proyector}}
+\end{equation}
+
+Sustituyendo las ecuaciones:
+
+\begin{equation}
+\frac{2N(N-1) + 4kN^2 H}{2} < N(N-1)(H+1)
+\end{equation}
+
+Multiplicamos por 2 en ambos lados:
+
+\begin{equation}
+2N(N-1) + 4kN^2 H < 2N(N-1)(H+1)
+\end{equation}
+
+Reorganizando:
+
+\begin{equation}
+4kN^2 H < 2N(N-1)(H+1) - 2N(N-1)
+\end{equation}
+
+\begin{equation}
+4kN^2 H < 2N(N-1)H
+\end{equation}
+
+Dividiendo entre \( 4N^2 H \):
+
+\begin{equation}
+k < \frac{N-1}{2N}
+\end{equation}
+
+\section{Conclusión}
+
+Hemos demostrado que el límite para \( k \) **es independiente de \( H \)**, lo que significa que el número de capas ocultas no afecta directamente la viabilidad de los proyectores en términos de comunicación. La reducción en la cantidad de neuronas en los proyectores debe ser:
+
+\begin{equation}
+k < \frac{N-1}{2N}
+\end{equation}
+
+Este resultado indica que, a medida que \( N \) crece, el límite superior de \( k \) se aproxima a \( 0.5 \), permitiendo proyectores más grandes sin incrementar la comunicación.
+
+\end{document}
