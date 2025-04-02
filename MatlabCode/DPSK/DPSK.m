@@ -22,7 +22,7 @@ for i = 1:length(SNR_dB)
     % Loop until we have enough bit errors for accurate BER calculation
     while numError < 10000 && numBits < 1e7
         % Generate random data symbols
-        signalTxBits = repmat([0; 1], numBitSymbol / 2, 1); % Alterna entre 0 y 1
+        signalTxBits = randi([0 1], numBitSymbol,1);
         signalTx = bit2int(signalTxBits, k);          % Convert bits to symbols
         
         % Transmit and receive the signal through the channel

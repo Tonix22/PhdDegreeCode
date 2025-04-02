@@ -2,14 +2,14 @@ close all;
 clc;
 addpath('../Libraries');
 
-%% 1. Crear carpeta de resultados "FCResults" si no existe
+%% 1. Crear carpeta de resultados "LSTMResults" si no existe
 resultsFolder = 'LSTMResults';
 if ~exist(resultsFolder, 'dir')
     mkdir(resultsFolder);
 end
 
 %% 2. Parámetros comunes del sistema
-snrValues = 0:5:25;      % Rango de SNR en dB
+snrValues = 0:5:15;      % Rango de SNR en dB
 M = 4;                   % Orden de modulación (QPSK)
 FFTSize = 48;            % Tamaño de la FFT para OFDM
 k = log2(M);             % Bits por símbolo (para QPSK: 2)
@@ -31,15 +31,18 @@ for i = 1:length(snrValues)
     XTrainCell = cell(numFramesTrain,1);
     YTrainCell = cell(numFramesTrain,1);
     for j = 1:numFramesTrain
-        % Generar símbolos aleatorios para una trama OFDM de numSC subportadoras
-        signalTx = generateRandomData(M, numSC);
+        % Generar bits fijos alternando entre 0 y 1
+        signalTxBits = randi([0 1], numBitSymbol,1);
+        signalTx = bit2int(signalTxBits, k);               % Convertir bits a símbolos
+        
         % Transmitir por el canal al SNR actual
         [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
         
         % Convertir DPSKSignalEstimate a secuencia: matriz de 2xnumSC (2 features: real e imaginario)
         featuresSeq = [ real(DPSKSignalEstimate(:)).' ; imag(DPSKSignalEstimate(:)).' ];  % [2 x numSC]
-        % Usar las etiquetas demoduladas (Labels) para la secuencia
-        labelsSeq = categorical(Labels(:).');  % fila de 1 x numSC
+        
+        %Convertir signalTx a etiquetas categóricas (ground truth)
+        labelsSeq = categorical(signalTx(:).', 0:M-1);  % fila de 1 x numSC con clases {0, 1, 2, 3}
         
         XTrainCell{j} = featuresSeq;
         YTrainCell{j} = labelsSeq;
@@ -70,24 +73,18 @@ for i = 1:length(snrValues)
         softmaxLayer('Name','softmax')
         classificationLayer('Name','classOutput')];
     
-    
-    
-    
     %% 3.4 Opciones de entrenamiento
     options = trainingOptions('adam', ...
         'MaxEpochs', 10, ...
         'MiniBatchSize', 128, ...
         'Shuffle', 'every-epoch', ...
-        'Verbose', false, ...
+        'Verbose', true, ...
         'Plots', 'none');
     
     %% 3.5 Entrenar la red neuronal con los datos de entrenamiento (secuencias)
     net = trainNetwork(Xtrain_seq, Ytrain_seq, layers, options);
     
     %% 3.6 Evaluación iterativa para calcular el BER y el Accuracy
-    % Se evaluarán:
-    %   - BER "raw": usando DPSKSignalEstimate directamente y la función biterr,
-    %   - BER "NN": usando la salida clasificada por la red.
     numError_raw = 0;    % Errores (método raw)
     numError_NN = 0;     % Errores (método con red)
     numBits = 0;         % Bits totales procesados
@@ -96,10 +93,12 @@ for i = 1:length(snrValues)
     numSymbols_NN = 0;
     numCorrect_NN = 0;
     
-    while (numError_raw < 10000 && numBits < 1e6)
-        % Generar una nueva trama de prueba
-        signalTx = generateRandomData(M, numSC);
-        % Ground truth para la comparación (usamos signalTx o Labels según convenga)
+    while (numError_raw < 10000 && numBits < 1e7)
+        % Generar bits fijos alternando entre 0 y 1
+        signalTxBits = repmat([0; 1], numBitSymbol / 2, 1); % Alterna entre 0 y 1
+        signalTx = bit2int(signalTxBits, k);               % Convertir bits a símbolos
+        
+        % Ground truth para la comparación
         Ytrue = categorical(signalTx(:).');  % fila de 1 x numSC
         
         [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
@@ -108,26 +107,29 @@ for i = 1:length(snrValues)
         numErrorCalculate_raw = biterr(signalTx, Labels);
         
         % --- Método "con red" ---
-        % Convertir DPSKSignalEstimate a secuencia: [2 x numSC]
         featuresSeq_eval = [ real(DPSKSignalEstimate(:)).' ; imag(DPSKSignalEstimate(:)).' ];
-        % Clasificar usando la red (se pasa la secuencia dentro de una celda)
         YPredCell = classify(net, {featuresSeq_eval});
         YPred = YPredCell{1};  % vector de 1 x numSC
         
-        % Para fines de comparación, se cuentan los errores a nivel de símbolo
+        % Contar errores
         numErrorCalculate_NN = sum(YPred ~= Ytrue);
         
         % Acumular errores y bits procesados
         numError_raw = numError_raw + numErrorCalculate_raw;
         numError_NN = numError_NN + numErrorCalculate_NN;
         numBits = numBits + numBitSymbol;  % Cada trama aporta numSC*k bits
+
+        % Imprimir signalTxBits si numBits es múltiplo de 1000
+        if mod(numBits, 1e6) == 0
+            fprintf('numBits: %d, numerror: %d\n', numBits,numError);
+        end
         
         % Acumular para accuracy
         numCorrect_NN = numCorrect_NN + sum(YPred == Ytrue);
         numSymbols_NN = numSymbols_NN + numel(Ytrue);
     end
     
-    % Calcular BER (a nivel de símbolo, no bit a bit) y accuracy
+    % Calcular BER y accuracy
     BER_raw = numError_raw / numBits;
     BER_NN  = numError_NN / numBits;
     berRaw_vals(i) = BER_raw;
@@ -137,46 +139,11 @@ for i = 1:length(snrValues)
     
     fprintf('SNR = %d dB  --->  BER (Raw) = %e,  BER (NN) = %e, Accuracy (NN) = %.2f%%\n', ...
         currentSNR, BER_raw, BER_NN, accuracy_NN*100);
-    
-    %% 3.7 Generar y guardar la matriz de confusión para este SNR (usando la red)
-    numFramesTest = 1000;
-    XTestConf = cell(numFramesTest,1);
-    YTestConf = cell(numFramesTest,1);
-    for j = 1:numFramesTest
-        signalTx = generateRandomData(M, numSC);
-        [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
-        featuresSeq_conf = [ real(DPSKSignalEstimate(:)).' ; imag(DPSKSignalEstimate(:)).' ];
-        labelsSeq_conf = categorical(Labels(:).');
-        XTestConf{j} = featuresSeq_conf;
-        YTestConf{j} = labelsSeq_conf;
-    end
-    YPredConfCell = classify(net, XTestConf);
-    % Concatenar resultados para la matriz de confusión
-    YConf_all = [];
-    YPred_all = [];
-    for j = 1:numFramesTest
-        YConf_all = [YConf_all, YTestConf{j}];
-        YPred_all = [YPred_all, YPredConfCell{j}];
-    end
-    
-    figCM = figure('visible','off');
-    confusionchart(YConf_all, YPred_all, 'Title', sprintf('Matriz de Confusión - NN a %d dB', currentSNR), ...
-        'RowSummary','row-normalized', 'ColumnSummary','column-normalized');
-    saveas(figCM, fullfile(resultsFolder, sprintf('NN_ConfusionMatrix_SNR%d.png', currentSNR)));
-    
 end
 
-%% 4. Graficar la relación SNR vs BER y guardar la figura
-figBER = figure('visible','off');
-plot(snrValues, berRaw_vals, '-o', 'LineWidth', 2);
-hold on;
-plot(snrValues, berNN_vals, '-s', 'LineWidth', 2);
-grid on;
-xlabel('SNR (dB)');
-ylabel('BER');
-title('Relación SNR vs BER');
-legend('DPSK Directo (Raw)', 'Con Red Neuronal', 'Location', 'southwest');
-saveas(figBER, fullfile(resultsFolder, 'SNR_vs_BER.png'));
+%% Guardar resultados en un archivo CSV
+results = [snrValues(:), berRaw_vals(:), berNN_vals(:)];
+csvFileName = fullfile(resultsFolder, 'LSTM_DPSK_Network.csv');
+writematrix(results, csvFileName);
 
-%% Opcional: Guardar los datos de BER en un archivo CSV
-csvwrite(fullfile(resultsFolder, 'SNR_vs_BER.csv'), [snrValues' berRaw_vals' berNN_vals']);
+fprintf('Resultados guardados en: %s\n', csvFileName);
