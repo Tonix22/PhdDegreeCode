@@ -1,3 +1,3 @@
 function OFDMsignalTx = ofdmModulate(DPSKsignalTx, FFTSize)
-    OFDMsignalTx = ifft(DPSKsignalTx);
+    OFDMsignalTx = ifft(DPSKsignalTx,FFTSize);
 end

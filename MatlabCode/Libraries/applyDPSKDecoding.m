@@ -1,5 +1,10 @@
 function DPSKsignalRx = applyDPSKDecoding(OFDMsignalRx, numSC)
-    DPSKsignalRx = complex(zeros(numSC, 1));
-    DPSKsignalRx(1) = OFDMsignalRx(1); % First symbol remains unchanged
-    DPSKsignalRx(2:end) = OFDMsignalRx(2:end) .* conj(OFDMsignalRx(1:end-1));
+    % Unwrap the phase of the received OFDM signal
+    phaseUnwrapped = unwrap(angle(OFDMsignalRx));
+    
+    % Calculate the phase difference
+    phaseDifference = diff([0; phaseUnwrapped]); % Prepend 0 for the first symbol
+    
+    % Reconstruct the complex signal from the phase differences
+    DPSKsignalRx = exp(1j * phaseDifference);
 end
