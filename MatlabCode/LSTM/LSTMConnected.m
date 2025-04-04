@@ -1,22 +1,37 @@
 close all;
+clear all;
 clc;
 addpath('../Libraries');
 
+channelAWGN = 1; % Selecciona si es awgn o canal
+
 %% 1. Crear carpeta de resultados "LSTMResults" si no existe
-resultsFolder = 'LSTMResults';
+if channelAWGN
+    resultsFolder = 'LSTMResultsAwgn';
+else
+    resultsFolder = 'LSTMResultsV2VChannel';
+end
+
 if ~exist(resultsFolder, 'dir')
     mkdir(resultsFolder);
 end
 
 %% 2. Parámetros comunes del sistema
-snrValues = 0:5:15;      % Rango de SNR en dB
-M = 4;                   % Orden de modulación (QPSK)
+EbNo = 0:2:12;           % Rango de EbNo
+
 FFTSize = 48;            % Tamaño de la FFT para OFDM
+M = 4;                   % Orden de modulación (QPSK)
 k = log2(M);             % Bits por símbolo (para QPSK: 2)
-numSC = 48;              % Número de subportadoras
+numSC = FFTSize;              % Número de subportadoras
 numBitSymbol = numSC * k; % Bits totales por símbolo OFDM
 numFramesTrain = 5000;   % Número de tramas para generar datos de entrenamiento
-H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+
+if channelAWGN
+    snrValues = EbNo + 10*log10(k);
+else
+    snrValues = EbNo + 10*log10(numBitSymbol); %#ok<UNRCH>
+    H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+end
 
 % Prealocar vectores para almacenar BER (método raw y con red)
 berRaw_vals = zeros(1, length(snrValues));
@@ -36,7 +51,12 @@ for i = 1:length(snrValues)
         signalTx = bit2int(signalTxBits, k);               % Convertir bits a símbolos
         
         % Transmitir por el canal al SNR actual
-        [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
+        if channelAWGN
+            [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
+        else
+            % Uses Channel
+            [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC, H); %#ok<UNRCH>
+        end
         
         % Convertir DPSKSignalEstimate a secuencia: matriz de 2xnumSC (2 features: real e imaginario)
         featuresSeq = [ real(DPSKSignalEstimate(:)).' ; imag(DPSKSignalEstimate(:)).' ];  % [2 x numSC]
@@ -82,7 +102,13 @@ for i = 1:length(snrValues)
         'Plots', 'none');
     
     %% 3.5 Entrenar la red neuronal con los datos de entrenamiento (secuencias)
+    fprintf('Entrenando la red neuronal para SNR = %d dB...\n', currentSNR);
     net = trainNetwork(Xtrain_seq, Ytrain_seq, layers, options);
+
+    % Guardar la red entrenada en un archivo .mat
+    networkFileName = fullfile(resultsFolder, sprintf('LSTM_Network_SNR_%ddB.mat', currentSNR));
+    save(networkFileName, 'net');
+    fprintf('Red neuronal guardada en: %s\n', networkFileName);
     
     %% 3.6 Evaluación iterativa para calcular el BER y el Accuracy
     numError_raw = 0;    % Errores (método raw)
@@ -101,7 +127,12 @@ for i = 1:length(snrValues)
         % Ground truth para la comparación
         Ytrue = categorical(signalTx(:).');  % fila de 1 x numSC
         
-        [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
+        if channelAWGN
+            [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC);
+        else
+            % Uses Channel
+            [Labels, DPSKSignalEstimate] = processChannelAndTransmit(signalTx, M, FFTSize, currentSNR, numSC,H); %#ok<UNRCH>
+        end
         
         % --- Método "raw" ---
         numErrorCalculate_raw = biterr(signalTx, Labels);
@@ -121,7 +152,7 @@ for i = 1:length(snrValues)
 
         % Imprimir signalTxBits si numBits es múltiplo de 1000
         if mod(numBits, 1e6) == 0
-            fprintf('numBits: %d, numerror: %d\n', numBits,numError);
+            fprintf('numBits: %d, numerror: %d\n', numBits,numError_raw);
         end
         
         % Acumular para accuracy

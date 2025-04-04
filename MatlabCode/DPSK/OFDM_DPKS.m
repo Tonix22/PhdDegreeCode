@@ -30,18 +30,18 @@ for i = 1:length(SNR)
         %Generate random data symbols
         %signalTx = randi([0 1], numBitSymbol,1);
         signalTxBits2 = repmat([0; 1], numBitSymbol / 2, 1); % Alterna entre 0 y 1
-        symbolTx2 = bit2int(signalTxBits,k);
+        symbolTx2 = bit2int(signalTxBits2,k);
         
         %QAM modulate 
         
-        pskSignal2 = dpskmod(symbolTx,M);
+        pskSignal2 = dpskmod(symbolTx2,M);
        
         %OFDM modulate
         OFDMsignalTx2 = ifft(pskSignal2,FFTSize);
         
         %pass throuht channel
         
-        signalRx = awgn(OFDMsignalTx,SNR(i),"measured");
+        signalRx = awgn(OFDMsignalTx2,SNR(i),"measured");
 
         %OFDM demodulate
         OFDMsignalRx = fft(signalRx,FFTSize);
@@ -56,7 +56,7 @@ for i = 1:length(SNR)
 
         bitsRx = int2bit(signalEstimateMyMethod,k);
         
-        numErrorCalculate = biterr(signalTx,bitsRx);
+        numErrorCalculate = biterr(signalTxBits2,bitsRx);
         
         
         numError = numError + numErrorCalculate;

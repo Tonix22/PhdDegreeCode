@@ -7,8 +7,16 @@ function [signalEstimate,DPSKsignalRx] = processChannelAndTransmit(signalTx, M, 
     OFDMsignalTx = ofdmModulate(pskSignal, FFTSize);
 
     if length(varargin) == 1
-        G = processChannel(varargin{1});  % Assign channel
-        DPSKsignalTx = G * DPSKsignalTx;
+        G = processChannel(varargin{1});  % G in frequency domain
+
+        % Convert to frequency domain
+        freqSignal = fft(OFDMsignalTx);
+
+        % Apply channel per subcarrier
+        freqSignal = G * freqSignal;
+
+        % Back to time domain
+        OFDMsignalTx = ifft(freqSignal);
     end
 
     % Pass through AWGN channel using SNR
