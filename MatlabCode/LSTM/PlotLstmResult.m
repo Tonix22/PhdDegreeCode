@@ -3,33 +3,28 @@ M = 4;                   % Modulation order (QPSK)
 EbNo = 0:2:12;
 channelAWGN = 1;
 
-if channelAWGN
-    csvFileName = 'LSTMResultsAwgn/LSTM_DPSK_Network.csv';
-    outputFileName = 'AWGN NN+DPSK Known SNR vs NN Ber Vote Unknown SNR.png';
-    csvVote = 'LSTMResultsAwgn/BER_vs_SNR_vote.csv';
-else
-    csvFileName = 'LSTMResultsV2VChannel/LSTM_DPSK_Network.csv';
-    % Save the plot as a .png file
-    outputFileName = 'V2V_NN_DPSK_vs_DPSK_only.png';
-end
+outputFileName = 'AWGN NN+DPSK BiLSTM Vs LSTM.png';
+
+csvFileName = 'LSTMResultsAwgn/LSTM_DPSK_Network.csv';
+csvVote = 'LSTMResultsAwgn/BER_vs_SNR_vote.csv';
 % Read the CSV file
 
 data = readmatrix(csvFileName);
-datavote = readmatrix(csvVote);
+dataVote = readmatrix(csvVote);
 % Extract SNR, BER (Raw), and BER (NN)
 berRaw = data(:, 2);          % BER for DPSK-only
 berNN = data(:, 3);           % BER for NN+DPSK
-berVote = datavote(:, 2);    % BER for voting
+dataVote = dataVote(:, 2);    % BER for voting
 
 berTheorical = berawgn(EbNo,'dpsk',M);
 % Plot the results
 figure;
-semilogy(EbNo,berTheorical, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Theoretical BER','Color', 'g');
+%semilogy(EbNo,berTheorical, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Theoretical BER','Color', 'g');
+semilogy(EbNo, berNN, '-s', 'LineWidth', 1.5, 'DisplayName', 'DPSK LSTM aware SNR','Color', 'b');
 hold on;
-semilogy(EbNo, berNN, '-s', 'LineWidth', 1.5, 'DisplayName', 'NN+DPSK Known SNR','Color', 'b');
 semilogy(EbNo, berRaw, '-o', 'LineWidth', 1.5, 'DisplayName', 'DPSK-only','Color', 'black');
 
-semilogy(EbNo, berVote, '-+', 'LineWidth', 1.5, 'DisplayName', 'NN Ber Vote Unknown SNR','Color', 'r');
+semilogy(EbNo, dataVote, '-+', 'LineWidth', 1.5, 'DisplayName', 'LSTM Vote NOT aware SNR','Color', 'r');
 
 hold off;
 

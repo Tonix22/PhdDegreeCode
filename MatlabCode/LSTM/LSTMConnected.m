@@ -79,7 +79,7 @@ for i = 1:length(snrValues)
     %% 3.3 Definir la arquitectura de la red neuronal LSTM para secuencias
     layers = [
         sequenceInputLayer(2, 'Normalization','zscore','Name','input')
-        bilstmLayer(128, 'OutputMode','sequence','Name','bilstm')
+        lstmLayer(128, 'OutputMode','sequence','Name','lstm')
         dropoutLayer(0.2, 'Name','dropout1')
         fullyConnectedLayer(128, 'Name','fc1')
         batchNormalizationLayer('Name','bn1')

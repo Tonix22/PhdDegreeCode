@@ -24,7 +24,7 @@ M = 4;                   % Orden de modulación (QPSK)
 k = log2(M);             % Bits por símbolo (para QPSK: 2)
 numSC = FFTSize;              % Número de subportadoras
 numBitSymbol = numSC * k; % Bits totales por símbolo OFDM
-numFramesTrain = 5000;   % Número de tramas para generar datos de entrenamiento
+numFramesTrain = 10000;   % Número de tramas para generar datos de entrenamiento
 
 if channelAWGN
     snrValues = EbNo + 10*log10(k);
@@ -126,6 +126,7 @@ YPred = zeros(numNetworks, numSC);
 numError_NN = zeros(length(snrValues),1);
 numBits = zeros(length(snrValues),1);
 
+tic; % Inicia el temporizador
 for i = 1:length(XTestShuffled)
     currentSNR = SNRTestShuffled{i};
     currentX   = XTestShuffled{i};
@@ -151,7 +152,11 @@ for i = 1:length(XTestShuffled)
     % Actualizar barra de progreso cada 100 datos
     if mod(i, 100) == 0 || i == length(XTestShuffled)
         percentComplete = (i / length(XTestShuffled)) * 100;
-        fprintf('Progreso: %.2f%% (%d de %d)\n', percentComplete, i, length(XTestShuffled));
+        elapsedTime = toc; % Tiempo transcurrido desde el inicio
+        estimatedTotalTime = (elapsedTime / i) * length(XTestShuffled); % Tiempo total estimado
+        remainingTime = estimatedTotalTime - elapsedTime; % Tiempo restante estimado
+        fprintf('Progreso: %.2f%% (%d de %d) - Tiempo restante estimado: %.2f segundos\n', ...
+            percentComplete, i, length(XTestShuffled), remainingTime);
     end
 
 end
