@@ -3,7 +3,7 @@ M = 4;                   % Modulation order (QPSK)
 EbNo = 0:2:12;
 channelAWGN = 1;
 
-outputFileName = 'AWGN NN+DPSK BiLSTM Vs LSTM.png';
+outputFileName = 'AWGN NN+DPSK.png';
 
 csvFileName = 'LSTMResultsAwgn/LSTM_DPSK_Network.csv';
 csvVote = 'LSTMResultsAwgn/BER_vs_SNR_vote.csv';
@@ -19,9 +19,9 @@ dataVote = dataVote(:, 2);    % BER for voting
 berTheorical = berawgn(EbNo,'dpsk',M);
 % Plot the results
 figure;
-%semilogy(EbNo,berTheorical, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Theoretical BER','Color', 'g');
-semilogy(EbNo, berNN, '-s', 'LineWidth', 1.5, 'DisplayName', 'DPSK LSTM aware SNR','Color', 'b');
+semilogy(EbNo,berTheorical, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Theoretical BER','Color', 'g');
 hold on;
+semilogy(EbNo, berNN, '-s', 'LineWidth', 1.5, 'DisplayName', 'DPSK LSTM aware SNR','Color', 'b');
 semilogy(EbNo, berRaw, '-o', 'LineWidth', 1.5, 'DisplayName', 'DPSK-only','Color', 'black');
 
 semilogy(EbNo, dataVote, '-+', 'LineWidth', 1.5, 'DisplayName', 'LSTM Vote NOT aware SNR','Color', 'r');

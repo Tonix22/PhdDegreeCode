@@ -80,22 +80,17 @@ for i = 1:length(snrValues)
     layers = [
         sequenceInputLayer(2, 'Normalization','zscore','Name','input')
         lstmLayer(128, 'OutputMode','sequence','Name','lstm')
-        dropoutLayer(0.2, 'Name','dropout1')
         fullyConnectedLayer(128, 'Name','fc1')
-        batchNormalizationLayer('Name','bn1')
         reluLayer('Name','relu1')
-        dropoutLayer(0.2, 'Name','dropout2')
         fullyConnectedLayer(32, 'Name','fc2')
-        batchNormalizationLayer('Name','bn3')
         reluLayer('Name','relu2')
-        dropoutLayer(0.2, 'Name','dropout3')
         fullyConnectedLayer(4, 'Name','fc3')
         softmaxLayer('Name','softmax')
         classificationLayer('Name','classOutput')];
-    
+
     %% 3.4 Opciones de entrenamiento
     options = trainingOptions('adam', ...
-        'MaxEpochs', 10, ...
+        'MaxEpochs', 9, ...
         'MiniBatchSize', 128, ...
         'Shuffle', 'every-epoch', ...
         'Verbose', true, ...
