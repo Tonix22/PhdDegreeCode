@@ -18,7 +18,7 @@ jsonText = fileread(jsonPath);
 config = jsondecode(jsonText);
 
 % Asignar parámetros desde JSON
-SNR_dB_Range = config.SNR_dB_Range(:);  % Asegurar que sea un vector columna
+EbNo = config.EbNo(:);  % Asegurar que sea un vector columna
 M = config.M;                        % Modulation order (QPSK)
 FFTSize = config.FFTSize;            % FFT size for OFDM
 Retransmitions = config.Retransmissions;  % Number of retransmissions
@@ -32,11 +32,13 @@ V2VChannel = config.V2VChannel;
 if islogical(V2VChannel) && V2VChannel
     disp('USING CHANNEL')
     H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+    SNR_dB_Range = EbNo + 10*log10(numBitSymbol);
 else
+    SNR_dB_Range = EbNo + 10*log10(k);
     disp('NO CHANNEL')
 end
 
-% 🔹 SOLUCIÓN: Iterar correctamente sobre cada elemento de SNR_dB_Range
+% SOLUCIÓN: Iterar correctamente sobre cada elemento de SNR_dB_Range
 for idx = 1:length(SNR_dB_Range)
     SNR_dB = SNR_dB_Range(idx);  % Tomar cada elemento individualmente
     disp(['Procesando SNR = ', num2str(SNR_dB)]);  % Confirmación visual
@@ -45,8 +47,9 @@ for idx = 1:length(SNR_dB_Range)
     Tx         = zeros(samplesPerSNR, numSC);
 
     for s = 1:samplesPerSNR
-        signalTx = generateRandomData(M, numSC);
-        Tx(s, :) = signalTx;
+        signalTxBits = randi([0 1], numBitSymbol,1);
+        signalTx = bit2int(signalTxBits, k); % Convert bits to symbols
+        Tx(s, :) = signalTx; % Store the signal in the matrix
         
         %% Stack Generation procedure
         for i = 1:Retransmitions
@@ -72,11 +75,11 @@ for idx = 1:length(SNR_dB_Range)
     end
 
     %% Guardar mimoSignal usando Python dentro de MATLAB
-    filename = sprintf("../../PythonCode/DeepLearning/MIMOSolution/data/Signal_SNR_Rx_%d.npy", SNR_dB);
-    py.numpy.save(filename, py.numpy.array(mimoSignal))
-    disp(['Saved ' filename ' successfully.']);
+    filename_rx = sprintf("../../PythonCode/DeepLearning/MIMOSolution/data/Signal_EbNo_Rx_%d.mat", floor(EbNo(idx)));
+    save(filename_rx, 'mimoSignal');
+    disp(['Saved ' filename_rx ' successfully.']);
 
-    filename = sprintf("../../PythonCode/DeepLearning/MIMOSolution/data/Signal_SNR_Tx_%d.npy", SNR_dB);
-    py.numpy.save(filename, py.numpy.array(Tx))
-    disp(['Saved ' filename ' successfully.']);
+    filename_tx = sprintf("../../PythonCode/DeepLearning/MIMOSolution/data/Signal_EbNo_Tx_%d.mat", floor(EbNo(idx)));
+    save(filename_tx, 'Tx');
+    disp(['Saved ' filename_tx ' successfully.']);
 end

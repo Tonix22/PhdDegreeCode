@@ -7,6 +7,7 @@ from LightningGym import LitModel
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
 from RowDataset import *
+from scipy.io import loadmat  # Import loadmat to read .mat files
 
 def load_config(json_path):
     """ Load training configuration from JSON file. """
@@ -23,7 +24,7 @@ def main(json_path):
     BATCHSIZE = config.get("BATCHSIZE", 256)
     LEARNINGRATE = config.get("LEARNINGRATE", 1e-3)
     TRAINPERCENT = config.get("TRAINPERCENT", 0.8)
-    SNR_RANGE = config.get("SNR_RANGE", [10, 15, 20, 25, 30, 35])  # Default range if not specified
+    EBNO_RANGE = config.get("EbNo", [0, 2, 4, 6, 8, 10,12])  # Default range if not specified
     DATA_PATH = config.get("DATA_PATH", "data/")
     MODEL_SAVE_PATH = config.get("MODEL_SAVE_PATH", "TrainnedModels/")
     NUM_WORKERS = config.get("NUM_WORKERS", 16)
@@ -31,12 +32,17 @@ def main(json_path):
 
     torch.manual_seed(0)
 
-    for SNR in SNR_RANGE:
-        print(f"CURRENT SNR TRAINING: {SNR}")
+    for EbNo in EBNO_RANGE:
+        print(f"CURRENT EbNo TRAINING: {EbNo}")
+
+        # Load dataset from .mat files
+        rx_mat = loadmat(f"{DATA_PATH}Signal_EbNo_Rx_{EbNo}.mat")
+        tx_mat = loadmat(f"{DATA_PATH}Signal_EbNo_Tx_{EbNo}.mat")
 
         # Load dataset
-        rx_data = np.load(f"{DATA_PATH}Signal_SNR_Rx_{SNR}.npy")
-        tx_data = np.load(f"{DATA_PATH}Signal_SNR_Tx_{SNR}.npy")
+        # Extract variables from the .mat files
+        rx_data = rx_mat['mimoSignal']  # Replace 'mimoSignal' with the variable name in the .mat file
+        tx_data = tx_mat['Tx']          # Replace 'Tx' with the variable name in the .mat file
 
         # Convert to PyTorch tensors
         data_tensor = torch.tensor(rx_data, dtype=torch.float32)
@@ -48,7 +54,7 @@ def main(json_path):
         # Initialize logger
         logger = TensorBoardLogger(
             "lightning_logs", 
-            name=f"MIMO_{SNR}_Epochs_{EPOCHS}_BS{BATCHSIZE}_LR{LEARNINGRATE}"
+            name=f"MIMO_{EbNo}_Epochs_{EPOCHS}_BS{BATCHSIZE}_LR{LEARNINGRATE}"
         )
 
         # Trainer configuration
@@ -72,7 +78,7 @@ def main(json_path):
         trainer.fit(model, train_loader, val_loader)
 
         # Save trained model
-        model_path = f"{MODEL_SAVE_PATH}model_MIMO_DPSK_{SNR}.pth"
+        model_path = f"{MODEL_SAVE_PATH}model_MIMO_DPSK_{EbNo}.pth"
         torch.save(model.state_dict(), model_path)
         print(f"Saved model: {model_path}")
 

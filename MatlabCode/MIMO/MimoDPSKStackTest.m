@@ -23,7 +23,7 @@ jsonText = fileread(jsonPath);
 config = jsondecode(jsonText);
 
 % Asignar parámetros desde JSON
-SNR_dB_Range = config.SNR_dB_Range(:);  % Asegurar que sea un vector columna
+EbNo = config.EbNo(:);  % Asegurar que sea un vector columna
 M = config.M;                        % Modulation order (QPSK)
 FFTSize = config.FFTSize;            % FFT size for OFDM
 Retransmitions = config.Retransmissions;  % Number of retransmissions
@@ -34,16 +34,17 @@ samplesPerSNR = config.samplesPerSNR; % Samples per SNR value
 V2VChannel = config.V2VChannel;
 PTHBasePath = config.PTHBasePath;
 errorThreshold = config.errorThreshold;
+bitsThreshold = config.bitsThreshold;
 
-H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
-
-%% 2. Setup Python and Load the Neural Network
-% Set environment variable if you run into library conflicts
-setenv('LD_PRELOAD', '/usr/lib/x86_64-linux-gnu/libstdc++.so.6');
-%if that doesnt works run this linux command before running matlab 
-% export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
-% run MimoDPSKStackTest.m
-% matlab
+% Cargar el canal desde el archivo MAT si está habilitado
+if islogical(V2VChannel) && V2VChannel
+    disp('USING CHANNEL')
+    H = load('../../Data/kaggle_dataset/v2v80211p_LOS.mat').vectReal32b;
+    SNR_dB_Range = EbNo + 10*log10(numBitSymbol);
+else
+    SNR_dB_Range = EbNo + 10*log10(k);
+    disp('NO CHANNEL')
+end
 
 %% Add the Python file directory to Python's search path
 mypythonpath = '../../PythonCode/DeepLearning/MIMOSolution';
@@ -56,8 +57,9 @@ ber = zeros(1, length(SNR_dB_Range));
 %% 4. Main Loop: Process each SNR value
 for idx = 1:length(SNR_dB_Range)
     currentSNR = SNR_dB_Range(idx);
+    currentEbno = EbNo(idx);
     % Create an instance of the ModelLoader class from Python
-    pthFile = PTHBasePath + "model_MIMO_DPSK_" + currentSNR + ".pth";
+    pthFile = PTHBasePath + "model_MIMO_DPSK_" + currentEbno + ".pth";
     model_loader = py.ModelLoader.ModelLoader(pthFile, py.float(1e-3), "cuda");
 
     numError = 0;  % Accumulated bit errors
@@ -67,10 +69,10 @@ for idx = 1:length(SNR_dB_Range)
     allTrueSymbols = [];
     allPredSymbols = [];
     
-    fprintf('Processing SNR = %d dB...\n', currentSNR);
+    fprintf('Processing EbNo = %d dB...\n', currentEbno);
     
     % Continue processing samples until errorThreshold is reached
-    while (numError < errorThreshold && numBits < 1e5)
+    while (numError < errorThreshold && numBits < bitsThreshold)
         % Generate random transmitted symbols (1 x numSC)
         signalTx = generateRandomData(M, numSC);  
         % signalTx is assumed to contain symbol labels (e.g., 0,1,2,3) for each subcarrier
@@ -130,29 +132,35 @@ for idx = 1:length(SNR_dB_Range)
     fprintf('SNR = %d dB, BER = %.4e\n', currentSNR, ber(idx));
     
     %% Plot and Save the Confusion Matrix for the current SNR
-    % Compute confusion matrix using stored true and predicted labels
-    % Flatten the arrays to ensure they are column vectors
-    trueVec = allTrueSymbols(:);
-    predVec = allPredSymbols(:);
-    
-    % Now compute the confusion matrix using the flattened vectors
+    % Ensure true and predicted symbols are column vectors
+    trueVec = allTrueSymbols(:); % Flatten to a column vector
+    predVec = allPredSymbols(:); % Flatten to a column vector
+
+    % Check if trueVec and predVec are non-empty and have the same length
+    if isempty(trueVec) || isempty(predVec)
+        warning('True or predicted symbols are empty for SNR = %d dB. Skipping confusion matrix.', currentSNR);
+        continue;
+    elseif length(trueVec) ~= length(predVec)
+        error('Mismatch in dimensions: trueVec (%d) and predVec (%d) for SNR = %d dB.', ...
+            length(trueVec), length(predVec), currentSNR);
+    end
+
+    % Compute the confusion matrix
     confMat = confusionmat(trueVec, predVec);
-    
-    
-    % Create a confusion chart (this gives a nice visual representation)
+
+    % Create a confusion chart
     hFig = figure;
-    % Optionally, specify the order if needed (e.g., [0 1 2 3])
-    cmChart = confusionchart(confMat, 0:(M-1));
-    cmChart.Title = sprintf('%d dB confusionmatrix', currentSNR);
+    cmChart = confusionchart(confMat, 0:(M-1)); % Specify the label range [0, 1, ..., M-1]
+    cmChart.Title = sprintf('%d dB Confusion Matrix', currentSNR);
     cmChart.RowSummary = 'row-normalized';
     cmChart.ColumnSummary = 'column-normalized';
-    
-    % Save the figure as a PNG file
+
+    % Save the confusion matrix as a PNG file
     filename = sprintf('%d_confusionmatrix.png', currentSNR);
     saveas(hFig, filename);
+    disp(['Confusion matrix saved as: ' filename]);
     close(hFig);
 end
-
 
 %% 5. Plot BER vs. SNR
 %% Plot Results

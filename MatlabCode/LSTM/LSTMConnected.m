@@ -48,7 +48,7 @@ for i = 1:length(snrValues)
     for j = 1:numFramesTrain
         % Generar bits fijos alternando entre 0 y 1
         signalTxBits = randi([0 1], numBitSymbol,1);
-        signalTx = bit2int(signalTxBits, k);               % Convertir bits a símbolos
+        signalTx = bit2int(signalTxBits, k);
         
         % Transmitir por el canal al SNR actual
         if channelAWGN
