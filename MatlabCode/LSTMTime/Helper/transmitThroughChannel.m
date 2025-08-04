@@ -9,7 +9,8 @@ function receivedFrame = transmitThroughChannel( ...
     receivedFrame = zeros(fftSize, fftSize);
 
     % ─── Canal LOS+NLOS único durante TODO el frame ──────────────────────────
-    H = chanLOS(:,:,channelIndex) + chanNLOS(:,:,channelIndex);
+    %H = chanLOS(:,:,channelIndex) + chanNLOS(:,:,channelIndex);
+    H = chanNLOS(:,:,channelIndex);
 
     % ─── Procesar cada símbolo OFDM del frame ────────────────────────────────
     for sym = 1:fftSize
