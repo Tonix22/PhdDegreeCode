@@ -1,11 +1,11 @@
 clear; clc;
 
-% === Rutas donde buscar (agregué tu ruta exacta) ===
+% === Rutas donde buscar ===
 roots = {
     pwd, ...
     fullfile(pwd, 'csv_results'), ...
-    '/home/tonix/Documents/PhdDegreeCode/MatlabCode/ZeroFocingMobileNet', ...
-    '/home/tonix/Documents/PhdDegreeCode/MatlabCode/GoldenModeling/csv_results'  % <-- tu ruta
+    '/home/tonix/Documents/PhdDegreeCode/MatlabCode/ZeroFocingMobileNet/Results/BLER', ...
+    '/home/tonix/Documents/PhdDegreeCode/MatlabCode/GoldenModeling/csv_BLER'
 };
 
 % === Mostrar rutas a escanear ===
@@ -18,8 +18,7 @@ end
 fileList = {};
 for r = 1:numel(roots)
     if isfolder(roots{r})
-        % Busca *.csv en subcarpetas
-        D = dir(fullfile(roots{r}, '**', '*.csv'));  % requiere R2016b+
+        D = dir(fullfile(roots{r}, '**', '*.csv'));  % R2016b+
         for k = 1:numel(D)
             fileList{end+1} = fullfile(D(k).folder, D(k).name); %#ok<AGROW>
         end
@@ -31,7 +30,6 @@ if isempty(fileList)
     error('No se encontraron archivos .csv en las rutas indicadas.');
 else
     fprintf('✅ Se encontraron %d archivos CSV.\n', numel(fileList));
-    % opcional: listar algunos
     nshow = min(10, numel(fileList));
     for i = 1:nshow
         fprintf('   [%2d] %s\n', i, fileList{i});
@@ -41,15 +39,21 @@ else
     end
 end
 
-% === Figura y estilo ===
-figure1 = figure('Color','w'); hold on; grid on; box on;
-set(gca, 'YScale', 'log');   % eje Y logarítmico
+% === Paletas de "texturas" (linea + marcador) ===
+markers    = {'o','s','d','^','v','>','<','p','h','x','+'};
+linestyles = {'-','--',':','-.'};
 
-labels = {};
+% ========== FIGURA ÚNICA: BER/BLER vs SNR (Y log) ==========
+figure1 = figure('Color','w'); hold on; grid on; box on;
+ax1 = gca; set(ax1, 'YScale', 'log');
+labels   = {};
 numPlotted = 0;
 
 for f = 1:numel(fileList)
     fp = fileList{f};
+    [~, base, ~] = fileparts(fp);
+    isBLERfile = strncmpi(base, 'BLER_', 5);  % ¿nombre empieza con BLER_?
+
     % Intentar leer CSV
     try
         T = readtable(fp, 'Delimiter', ',', 'VariableNamingRule','preserve');
@@ -58,70 +62,96 @@ for f = 1:numel(fileList)
         continue;
     end
 
-    % Normalizar nombres de columnas (para detectar SNR/BER)
+    % Normalizar nombres de columnas
     names = string(T.Properties.VariableNames);
     namesLower = lower(strrep(names, '_',''));
-    % candidatos típicos
-    snrIdx = find( ...
-        namesLower == "snrdb" | namesLower == "snr" | namesLower == "snrdbm" | ...
-        contains(namesLower, "snr"), 1);
-    berIdx = find( ...
-        namesLower == "ber" | contains(namesLower, "ber") | ...
-        contains(namesLower, "errorrate") | contains(namesLower, "pe"), 1);
 
-    if isempty(snrIdx) || isempty(berIdx)
-        % Si no hay columnas claras, intenta heurística: 1ª numérica como SNR y 2ª numérica como BER
+    % Detectar SNR
+    snrIdx = find(namesLower=="snrdb" | namesLower=="snr" | namesLower=="snrdbm" | contains(namesLower,"snr"), 1);
+    if isempty(snrIdx)
+        numericCols = varfun(@isnumeric, T, 'OutputFormat','uniform');
+        cand = find(numericCols);
+        if ~isempty(cand), snrIdx = cand(1); end
+    end
+    if isempty(snrIdx)
+        warning('No SNR column in: %s', fp);
+        continue;
+    end
+    snr = T{:, snrIdx};
+
+    % Elegir métrica: si el nombre empieza con BLER_, priorizamos BLER; si no, BER.
+    yIdx = [];
+    if isBLERfile
+        yIdx = find(namesLower=="bler" | contains(namesLower,"bler"), 1);
+        if isempty(yIdx)
+            % fallback: si no hubiera BLER, intenta BER
+            yIdx = find(namesLower=="ber" | contains(namesLower,"ber") | contains(namesLower,"errorrate") | contains(namesLower,"pe"), 1);
+        end
+    else
+        yIdx = find(namesLower=="ber" | contains(namesLower,"ber") | contains(namesLower,"errorrate") | contains(namesLower,"pe"), 1);
+        if isempty(yIdx)
+            % fallback: si no hubiera BER, intenta BLER
+            yIdx = find(namesLower=="bler" | contains(namesLower,"bler"), 1);
+        end
+    end
+
+    if isempty(yIdx)
+        % Heurística: segunda numérica
         numericCols = varfun(@isnumeric, T, 'OutputFormat','uniform');
         cand = find(numericCols);
         if numel(cand) >= 2
-            snrIdx = cand(1);
-            berIdx = cand(2);
+            yIdx = cand(2);
         else
-            % No ploteable
+            warning('No BER/BLER column in: %s', fp);
             continue;
         end
     end
 
-    snr = T{:, snrIdx};
-    ber = T{:, berIdx};
+    y = T{:, yIdx};
 
-    % Limpiar y ordenar
-    mask = ~(isnan(snr) | isnan(ber));
-    snr = snr(mask); ber = ber(mask);
-    if isempty(snr) || isempty(ber), continue; end
+    % Limpiar/ordenar
+    mask = ~(isnan(snr) | isnan(y));
+    snr = snr(mask); y = y(mask);
+    if isempty(snr) || isempty(y), continue; end
     [snr, idx] = sort(snr(:), 'ascend');
-    ber = ber(idx);
+    y = y(idx);
 
-    % Validar rango
-    if all(ber <= 0) || all(ber >= 1)
-        % datos sospechosos, lo saltamos
+    % Validar rango (0<y<1) para log
+    if all(y <= 0) || all(y >= 1)
+        % Si todo está fuera de (0,1) no es ploteable en log de forma sensata
         continue;
     end
 
-    % Graficar
-    semilogy(snr, ber, 'LineWidth', 1.8);
-    [~, base, ~] = fileparts(fp);
+    % Textura única por curva
+    mkr = markers{mod(numPlotted, numel(markers)) + 1};
+    lst = linestyles{mod(floor(numPlotted/numel(markers)), numel(linestyles)) + 1};
+    mkIdx = unique(round(linspace(1, numel(snr), min(10, numel(snr)))));
+
+    % Graficar como semilogy (BER o BLER, el que haya tocado)
+    semilogy(snr, y, 'LineWidth', 1.8, ...
+        'LineStyle', lst, 'Marker', mkr, 'MarkerIndices', mkIdx);
+
     labels{end+1} = base; %#ok<AGROW>
     numPlotted = numPlotted + 1;
 end
 
 if numPlotted == 0
-    error(['Se encontraron CSV pero ninguno tenía columnas reconocibles de SNR/BER. ' ...
-           'Verifica encabezados (p.ej., "SNR_dB,BER").']);
+    error(['Se encontraron CSV pero ninguno tenía columnas reconocibles de SNR y BER/BLER en (0,1). ' ...
+           'Verifica encabezados (p.ej., "SNR_dB,BER" o "SNR_dB,BLER").']);
 end
 
 xlabel('SNR (dB)');
-ylabel('BER');
-title('BER vs SNR');
+ylabel('BER / BLER');
+title('BER / BLER vs SNR (log scale)');
 legend(labels, 'Location','northeast', 'Interpreter','none');
 
 % Guardar JPG
 outDir = 'plots';
 if ~exist(outDir, 'dir'), mkdir(outDir); end
 t = datetime('now','Format','MMM_dd_yyyy-HH_mm_ss');
-jpg = fullfile(outDir, "BER_from_CSVs_" + string(t) + ".jpg");
+jpg = fullfile(outDir, "BER_BLER_from_CSVs_" + string(t) + ".jpg");
 saveas(figure1, jpg);
 fprintf('📸 Gráfico guardado en: %s\n', jpg);
 
-% ========== helper inline (sin funciones externas) ==========
+% ========== helper inline ==========
 function out = ternary(cond, a, b), if cond, out = a; else, out = b; end, end
