@@ -7,7 +7,7 @@ addpath('.') % add current path to directory
 FastRun = false;
 
 % QAM DATA
-modorder   = 16;  %constelation size
+modorder   = 4;  %constelation size
 
 SNRVECT    = 45:-2:5; % SNR range with step of
 
@@ -56,8 +56,8 @@ for SNR=SNRVECT
         end
         %Tx data generation
         txbits = randi([0 1],size(LOS,1)*log2(modorder),1);
+        %X      = qammod(txbits, modorder, 'gray', 'InputType', 'bit','UnitAveragePower', true);
         X      = qammod(txbits, modorder, 'gray', 'InputType', 'bit','UnitAveragePower', true);
-
         %Channel matrix multiply
         Y   = H*X;
 
