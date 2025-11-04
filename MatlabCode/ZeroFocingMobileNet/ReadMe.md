@@ -1,7 +1,7 @@
 ## Generate Frames
 
 ### Trainning
-frames   = 5000;              % frames per SNR
+frames   = 10000;              % frames per SNR
 outdir   = 'datasets';        % output folder
 GenerateFrames.m
 
@@ -40,12 +40,23 @@ python test_pl_zf_mnv3.py \
   --out_plot ./ber_curve.jpg \
   --batch_size 256
 ```
+python test_pl_zf_mnv3.py \
+  --data_dir ./datasetsTest \
+  --ckpt ./checkpoints_pl/zf_mnv3-epoch=03-val_loss=0.006548.ckpt \
+  --out_csv ./ber_results.csv \
+  --out_plot ./ber_curve.jpg \
+  --batch_size 256 \
+  --out_csv_ber_bler ./ber_bler_results.csv \
+  --out_csv_crc_blocks ./crc_blocks.csv
 
 Only 15db Trainned
+
+
+
 ```
 python test_pl_zf_mnv3.py \
   --data_dir ./datasetsTest \
-  --ckpt ./checkpoints_pl/zf_mnv3-epoch=03-val_loss=0.039871.ckpt \
+  --ckpt ./checkpoints_pl/zf_mnv3_mt_v2-epoch=09-val_loss=0.086406.ckpt \
   --out_csv ./ber_results.csv \
   --out_plot ./ber_curve.jpg \
   --batch_size 256

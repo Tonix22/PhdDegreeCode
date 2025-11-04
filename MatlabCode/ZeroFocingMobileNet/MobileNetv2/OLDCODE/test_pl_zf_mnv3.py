@@ -16,6 +16,7 @@ import h5py
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
 import pytorch_lightning as pl
+import crcmod.predefined  # <-- NUEVO
 
 torch.set_float32_matmul_precision("high")
 
@@ -263,7 +264,7 @@ class HEqualizerBERTestSet(Dataset):
                 torch.from_numpy(gt_bits),
                 SNR)
 
-# ---------- Utils BER ----------
+# ---------- Utils BER/CRC ----------
 def build_bits2cls_from_lut(cls2bits: torch.Tensor) -> torch.Tensor:
     """
     cls2bits: (4,2) uint8 -> bits2cls: (2,2) long para indexar [b0,b1].
@@ -275,6 +276,15 @@ def build_bits2cls_from_lut(cls2bits: torch.Tensor) -> torch.Tensor:
         m[b0, b1] = c
     return m
 
+def _bits_to_bytes(bits_np: np.ndarray) -> bytes:
+    """
+    Convierte un array de bits {0,1} en bytes.
+    Espera shape (...,) o (48,2). Empaqueta MSB-first; se usa igual para TX y RX.
+    """
+    flat = bits_np.reshape(-1).astype(np.uint8)
+    packed = np.packbits(flat, bitorder='big')
+    return packed.tobytes()
+
 @torch.no_grad()
 def evaluate_ber(model: ZFMobileNetMultiTask, loader, device, cls2bits_np=None):
     model.eval()
@@ -285,9 +295,14 @@ def evaluate_ber(model: ZFMobileNetMultiTask, loader, device, cls2bits_np=None):
     cls2bits = torch.from_numpy(cls2bits_np).to(device=device, dtype=torch.uint8)   # (4,2)
     bits2cls = build_bits2cls_from_lut(cls2bits)                                    # (2,2)
 
-    snr_stats = {}  # snr -> {'err': int, 'tot': int}
+    snr_stats = {}   # snr -> {'err': int, 'tot': int}
+    bler_stats = {}  # snr -> {'bad': int, 'tot': int}  # <-- NUEVO
     tot_err = 0; tot_bits = 0
     cls_ok = 0; cls_tot = 0
+
+    crc_func = crcmod.predefined.mkCrcFun('crc-16')  # <-- NUEVO
+    crc_rows = []  # filas por bloque: sample_id, SNR, bit_errs, tx_crc, rx_crc, match
+    sample_id = 0
 
     for H_enc, Ymf_ri, gt_bits, SNR in tqdm(loader, total=len(loader), desc="Testing", unit="batch", dynamic_ncols=True):
         H_enc  = H_enc.to(device)                         # (B,3,48,48)
@@ -323,16 +338,49 @@ def evaluate_ber(model: ZFMobileNetMultiTask, loader, device, cls2bits_np=None):
             snr_arr = np.asarray(SNR, dtype=np.float32).reshape(-1)
         else:
             snr_arr = np.asarray([SNR], dtype=np.float32)
-        for i in range(pred_bits.size(0)):
-            e_i = int(err_bits_batch[i]); t_i = int(tot_bits_batch); s = float(snr_arr[i])
-            d = snr_stats.setdefault(s, {"err":0, "tot":0})
-            d["err"] += e_i; d["tot"] += t_i
+
+        # CRC por bloque y BLER
+        pred_bits_np = pred_bits.detach().cpu().numpy()
+        gt_bits_np   = gt_bits.detach().cpu().numpy()
+        B = pred_bits_np.shape[0]
+        for i in range(B):
+            s = float(snr_arr[i])
+            e_i = int(err_bits_batch[i])  # #bits erróneos en el bloque
+            tx_crc = crc_func(_bits_to_bytes(gt_bits_np[i]))  # GT
+            rx_crc = crc_func(_bits_to_bytes(pred_bits_np[i]))# Pred
+            crc_match = int(tx_crc == rx_crc)
+            # BLER por CRC (bloque malo si CRC difiere)
+            d = bler_stats.setdefault(s, {"bad":0, "tot":0})
+            d["tot"] += 1
+            if not crc_match:
+                d["bad"] += 1
+
+            # BER por SNR (ya contábamos err/tot a nivel bits)
+            dber = snr_stats.setdefault(s, {"err":0, "tot":0})
+            dber["err"] += e_i
+            dber["tot"] += tot_bits_batch
+
+            crc_rows.append([
+                sample_id, s, e_i,
+                f"0x{tx_crc:04X}", f"0x{rx_crc:04X}", int(crc_match == 1)
+            ])
+            sample_id += 1
 
     snrs = sorted([k for k in snr_stats.keys() if not np.isnan(k)])
     ber  = [snr_stats[s]["err"] / max(1, snr_stats[s]["tot"]) for s in snrs]
+    bler = []
+    for s in snrs:
+        bstats = bler_stats.get(s, {"bad":0, "tot":0})
+        bler.append(bstats["bad"] / max(1, bstats["tot"]))
+
     overall_ber = tot_err / max(1, tot_bits)
     overall_acc = cls_ok / max(1, cls_tot)
-    return snrs, ber, overall_ber, overall_acc
+    # BLER global
+    total_blocks = sum(bler_stats[s]["tot"] for s in bler_stats)
+    bad_blocks   = sum(bler_stats[s]["bad"] for s in bler_stats)
+    overall_bler = bad_blocks / max(1, total_blocks)
+
+    return snrs, ber, overall_ber, overall_acc, bler, overall_bler, crc_rows
 
 # ---------- Main ----------
 def main():
@@ -344,6 +392,9 @@ def main():
     ap.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out_csv", type=str, default="ber_results.csv")
     ap.add_argument("--out_plot", type=str, default="ber_curve.jpg")
+    # Nuevos nombres de salida (opcionales, fijos por defecto)
+    ap.add_argument("--out_csv_ber_bler", type=str, default="ber_bler_results.csv")
+    ap.add_argument("--out_csv_crc_blocks", type=str, default="crc_blocks.csv")
     args = ap.parse_args()
 
     device = torch.device(args.device)
@@ -367,9 +418,10 @@ def main():
         print("No se pudo aprender LUT; se usará Gray por defecto.")
 
     # Eval
-    snrs, ber, overall, cls_acc = evaluate_ber(model, dl, device, cls2bits_np)
+    snrs, ber, overall, cls_acc, bler, overall_bler, crc_rows = evaluate_ber(model, dl, device, cls2bits_np)
 
     print(f"BER global: {overall:.6e}")
+    print(f"BLER global (CRC-16): {overall_bler:.6e}")  # <-- NUEVO
     print(f"Accuracy de clase (sanidad): {cls_acc:.4f}")
 
     # CSV
@@ -378,7 +430,20 @@ def main():
         for s, b in zip(snrs, ber): w.writerow([s, b])
     print(f"CSV guardado -> {args.out_csv}")
 
-    # Plot
+    # CSV combinado BER+BLER vs SNR
+    with open(args.out_csv_ber_bler, "w", newline="") as f:
+        w = csv.writer(f); w.writerow(["SNR_dB", "BER", "BLER"])
+        for s, b, bl in zip(snrs, ber, bler): w.writerow([s, b, bl])
+    print(f"CSV guardado -> {args.out_csv_ber_bler}")
+
+    # CSV por bloque con CRCs
+    with open(args.out_csv_crc_blocks, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["sample_id", "SNR_D_B", "bit_errors", "tx_crc", "rx_crc", "crc_match"])
+        w.writerows(crc_rows)
+    print(f"CSV guardado -> {args.out_csv_crc_blocks}")
+
+    # Plot (sin cambios)
     if len(ber) > 0:
         plt.figure()
         plt.semilogy(snrs, ber, marker="o")

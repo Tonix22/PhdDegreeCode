@@ -25,3 +25,4 @@ lightning_logs/*
 *.pth
 Rutines/MIMO/lightning_logs/*
 **/lightning_logs/*
+*.png

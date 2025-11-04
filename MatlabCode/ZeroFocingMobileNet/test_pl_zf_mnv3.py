@@ -10,6 +10,7 @@ import h5py
 import matplotlib.pyplot as plt
 import csv
 import pytorch_lightning as pl
+import crcmod.predefined  # <-- NUEVO
 
 torch.set_float32_matmul_precision("high")  # use Tensor Cores if available
 
@@ -196,12 +197,28 @@ class HEqualizerTestSet(Dataset):
         SNR = item["SNR"]; modorder = item["modorder"]
         return torch.from_numpy(H_mp), Y_ri, X_c, SNR, modorder
 
+# ---------- Utils CRC ----------
+
+def _bits_to_bytes(bits_np: np.ndarray) -> bytes:
+    """
+    Convierte bits {0,1} -> bytes. Acepta (48,2) o (N,) y empaca MSB-first.
+    Se usa igual para TX y RX (consistencia > convención).
+    """
+    flat = bits_np.reshape(-1).astype(np.uint8)
+    packed = np.packbits(flat, bitorder="big")
+    return packed.tobytes()
+
 # ---------- Runner ----------
 
 @torch.no_grad()
 def evaluate_ber(model, loader, device):
     model.eval()
-    snr_stats = {}  # snr -> {'err': int, 'tot': int}
+    snr_stats = {}   # snr -> {'err': int, 'tot': int}
+    bler_stats = {}  # snr -> {'bad': int, 'tot': int}  # <-- NUEVO
+
+    crc_func = crcmod.predefined.mkCrcFun('crc-16')  # <-- NUEVO
+    crc_rows = []  # filas por bloque: sample_id, SNR_dB, bit_errors, tx_crc, rx_crc, crc_match
+    sample_id = 0
 
     for H_mp, Y_ri, X_c, SNR, modorder in loader:
         # move tensors
@@ -215,32 +232,55 @@ def evaluate_ber(model, loader, device):
         Yi = Y_rot_ri[..., 1].cpu().numpy()
         Y_hat = Yr + 1j * Yi        # (B,48)
 
-        X_c = np.stack(X_c, axis=0) # (B,48) complex from list
+        # X_c viene como lista de np.arrays (por default collate); apílalo:
+        X_c = np.stack(X_c, axis=0) # (B,48) complex
 
-        # Demod both (QPSK assumed)
-        bits_hat = qpsk_demod_to_bits(Y_hat.reshape(-1))   # (B*48, 2)
-        bits_ref = qpsk_demod_to_bits(X_c.reshape(-1))     # (B*48, 2)
+        # Demod ambos (QPSK asumido)
+        bits_hat_all = qpsk_demod_to_bits(Y_hat.reshape(-1))   # (B*48, 2)
+        bits_ref_all = qpsk_demod_to_bits(X_c.reshape(-1))     # (B*48, 2)
 
-        # XOR and count
-        err_bits = np.count_nonzero(bits_hat ^ bits_ref)
-        tot_bits = bits_hat.size
-
-        # aggregate per SNR (SNR is a list/array per batch; use each item)
-        for i in range(len(SNR)):
+        B = Y_hat.shape[0]
+        for i in range(B):
             snr = float(SNR[i])
-            # split this sample's slice
-            bh_i = bits_hat[i*48:(i+1)*48]
-            br_i = bits_ref[i*48:(i+1)*48]
-            e_i = np.count_nonzero(bh_i ^ br_i)
-            t_i = bh_i.size
+
+            # slice por bloque
+            bh_i = bits_hat_all[i*48:(i+1)*48]  # (48,2)
+            br_i = bits_ref_all[i*48:(i+1)*48]  # (48,2)
+
+            # BER agregada por SNR (como antes)
+            e_i = int(np.count_nonzero(bh_i ^ br_i))
+            t_i = int(bh_i.size)
             d = snr_stats.setdefault(snr, {"err": 0, "tot": 0})
-            d["err"] += int(e_i)
-            d["tot"] += int(t_i)
+            d["err"] += e_i
+            d["tot"] += t_i
+
+            # ---- NUEVO: CRC por bloque y BLER ----
+            tx_crc = crc_func(_bits_to_bytes(br_i))  # GT
+            rx_crc = crc_func(_bits_to_bytes(bh_i))  # Pred
+            crc_ok = int(tx_crc == rx_crc)
+
+            db = bler_stats.setdefault(snr, {"bad": 0, "tot": 0})
+            db["tot"] += 1
+            if not crc_ok:
+                db["bad"] += 1
+
+            crc_rows.append([
+                sample_id, snr, e_i,
+                f"0x{tx_crc:04X}", f"0x{rx_crc:04X}", crc_ok
+            ])
+            sample_id += 1
 
     # compute BER per SNR sorted
     snrs = sorted([k for k in snr_stats.keys() if not np.isnan(k)], reverse=False)
-    ber = [snr_stats[s]["err"] / snr_stats[s]["tot"] for s in snrs]
-    return snrs, ber
+    ber  = [snr_stats[s]["err"] / snr_stats[s]["tot"] for s in snrs]
+
+    # compute BLER per SNR (bloque malo: CRC mismatch)
+    bler = []
+    for s in snrs:
+        b = bler_stats.get(s, {"bad": 0, "tot": 0})
+        bler.append(b["bad"] / max(1, b["tot"]))
+
+    return snrs, ber, bler, crc_rows
 
 def main():
     ap = argparse.ArgumentParser()
@@ -252,6 +292,9 @@ def main():
     ap.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--out_csv", type=str, default="ber_results.csv")
     ap.add_argument("--out_plot", type=str, default="ber_curve.jpg")
+    # ---- NUEVO: salidas BLER/CRC ----
+    ap.add_argument("--out_csv_ber_bler", type=str, default="ber_bler_results.csv")
+    ap.add_argument("--out_csv_crc_blocks", type=str, default="crc_blocks.csv")
     args = ap.parse_args()
 
     # Model
@@ -279,9 +322,9 @@ def main():
                     num_workers=args.num_workers, pin_memory=True, collate_fn=None)
 
     # Eval
-    snrs, ber = evaluate_ber(model, dl, device)
+    snrs, ber, bler, crc_rows = evaluate_ber(model, dl, device)
 
-    # Save CSV
+    # Save CSV BER (igual que antes)
     with open(args.out_csv, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["SNR_dB", "BER"])
@@ -289,7 +332,22 @@ def main():
             w.writerow([s, b])
     print(f"Saved CSV -> {args.out_csv}")
 
-    # Plot
+    # Nuevo: CSV combinado BER+BLER
+    with open(args.out_csv_ber_bler, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["SNR_dB", "BER", "BLER"])
+        for s, b, bl in zip(snrs, ber, bler):
+            w.writerow([s, b, bl])
+    print(f"Saved CSV -> {args.out_csv_ber_bler}")
+
+    # Nuevo: CSV por bloque con CRCs
+    with open(args.out_csv_crc_blocks, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["sample_id", "SNR_dB", "bit_errors", "tx_crc", "rx_crc", "crc_match"])
+        w.writerows(crc_rows)
+    print(f"Saved CSV -> {args.out_csv_crc_blocks}")
+
+    # Plot BER (sin cambios)
     plt.figure()
     if len(ber) > 0:
         plt.semilogy(snrs, ber, marker="o")
