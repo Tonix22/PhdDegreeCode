@@ -5,7 +5,12 @@
 
 \vspace{2em}
 
-Abstract text.
+Multicarrier communication systems are often implemented using Orthogonal Frequency Division Multiplexing because it is more robust and bandwidth-efficient. However, in high-mobility scenarios, such as vehicular communications under the V2V standard defined by IEEE 802.11p, one of the most common effects is that Doppler spread and multipath delay spread destroy the orthogonality among subcarriers, generating inter-carrier interference and making reliable symbol detection a challenging task. Conventional linear equalizers, such as least squares and linear minimum mean square error detectors, provide low computational complexity but limited bit error rate performance, especially at low SNR values. In contrast, nonlinear detectors can improve detection accuracy but often require iterative processing or high-complexity search procedures that limit their suitability for real-time vehicular applications.
+
+This work investigates efficient deep learning-based detection schemes for multicarrier communication systems operating under high-mobility conditions. Three neural receiver strategies are studied. First, a fully connected neural detector is introduced to perform M-PSK detection after a signal-model-driven preprocessing stage that reduces the learning burden by compensating part of the channel-induced phase distortion. Second, a lightweight MobileNetV3-based receiver is proposed to exploit convolutional feature extraction and depthwise-separable operations for low-complexity phase correction in OFDM systems. Third, a polar-grid transformer equalizer is developed by discretizing the received IQ plane into radial and angular tokens, allowing the attention mechanism to model spatial and temporal dependencies caused by residual inter-carrier interference.
+
+Simulation results using QPSK-modulated OFDM signals over doubly dispersive vehicular channels show that the proposed learning-based receivers improve bit error rate performance compared with conventional equalization methods and recent neural-based approaches. The results demonstrate that combining classical signal processing with compact neural architectures can provide a favorable trade-off between detection accuracy and computational complexity. Therefore, the proposed schemes represent scalable and efficient alternatives for real-time multicarrier communication systems in high-mobility environments.
+
 
 
 \clearpage

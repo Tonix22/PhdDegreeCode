@@ -1,0 +1,30 @@
+# Archivos auxiliares generados por LaTeX y BibTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv
+
+# Indices, glosarios y nomenclaturas generados
+*.acn
+*.acr
+*.alg
+*.glg
+*.glo
+*.gls
+*.ist
+
+# Salida principal de la compilacion
+/main.pdf
+
+# Metadatos de macOS
+.DS_Store
